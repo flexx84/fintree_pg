@@ -396,14 +396,24 @@
         <!-- 진행 상태 -->
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p id="loadingText">변환 중입니다...</p>
+            <h3 id="loadingText" style="color: #667eea; margin: 15px 0;">변환 중입니다...</h3>
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill" style="width: 0%"></div>
             </div>
-            <p id="progressText" style="font-size: 14px; color: #666;">0 / 0 완료</p>
-            <div id="processStatus" style="margin-top: 10px; padding: 10px; background: #f0f1ff; border-radius: 5px; font-size: 12px; color: #667eea; display: none;">
-                <div id="gptStatus">🤖 GPT 처리: 대기 중...</div>
-                <div id="imageStatus">📷 이미지 처리: 대기 중...</div>
+            <p id="progressText" style="font-size: 16px; font-weight: bold; color: #333; margin: 10px 0;">0 / 0 완료</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f0f1ff; border-radius: 8px;">
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">처리 속도</div>
+                    <div id="processSpeed" style="font-size: 14px; font-weight: bold; color: #667eea;">계산 중...</div>
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">예상 남은 시간</div>
+                    <div id="estimatedTime" style="font-size: 14px; font-weight: bold; color: #667eea;">계산 중...</div>
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">현재 단계</div>
+                    <div id="currentStep" style="font-size: 14px; font-weight: bold; color: #667eea;">준비 중...</div>
+                </div>
             </div>
         </div>
         
@@ -803,6 +813,8 @@
         let jsonData = null;
         let lastExcelData = null;
         let lastFilename = null;
+        let processingStartTime = null;
+        let lastProgressUpdate = null;
         const priceParser = new PriceParser();
 
         // 초기화
@@ -1176,17 +1188,84 @@
             preview.style.display = 'block';
         }
 
-        function updateProgress(current, total, statusText = '') {
+        function updateProgress(current, total, statusText = '', currentStep = '') {
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
             const loadingText = document.getElementById('loadingText');
+            const processSpeed = document.getElementById('processSpeed');
+            const estimatedTime = document.getElementById('estimatedTime');
+            const currentStepEl = document.getElementById('currentStep');
+            
             const percentage = (current / total) * 100;
             
+            // 진행률 바 업데이트
             progressFill.style.width = `${percentage}%`;
-            progressText.textContent = `${current} / ${total} 완료`;
+            progressText.textContent = `${current} / ${total} 완료 (${percentage.toFixed(1)}%)`;
             
             if (statusText) {
                 loadingText.textContent = statusText;
+            }
+            
+            // 현재 단계 표시
+            if (currentStep) {
+                currentStepEl.textContent = currentStep;
+            } else if (current === 0) {
+                currentStepEl.textContent = '준비 중...';
+            } else if (current === total) {
+                currentStepEl.textContent = '완료!';
+            } else {
+                currentStepEl.textContent = `${current}번째 상품 처리 중`;
+            }
+            
+            // 처리 속도 및 예상 시간 계산
+            const now = Date.now();
+            if (processingStartTime && current > 0) {
+                const elapsedTime = (now - processingStartTime) / 1000; // 초
+                const itemsPerSecond = current / elapsedTime;
+                const remainingItems = total - current;
+                const estimatedRemainingTime = remainingItems / itemsPerSecond;
+                
+                // 처리 속도 표시
+                if (itemsPerSecond >= 1) {
+                    processSpeed.textContent = `${itemsPerSecond.toFixed(1)} 상품/초`;
+                } else {
+                    processSpeed.textContent = `${(60 / itemsPerSecond).toFixed(1)} 초/상품`;
+                }
+                
+                // 예상 남은 시간 표시
+                if (current === total) {
+                    estimatedTime.textContent = '완료!';
+                } else if (estimatedRemainingTime < 60) {
+                    estimatedTime.textContent = `${Math.ceil(estimatedRemainingTime)}초`;
+                } else if (estimatedRemainingTime < 3600) {
+                    const minutes = Math.ceil(estimatedRemainingTime / 60);
+                    estimatedTime.textContent = `${minutes}분`;
+                } else {
+                    const hours = Math.floor(estimatedRemainingTime / 3600);
+                    const minutes = Math.ceil((estimatedRemainingTime % 3600) / 60);
+                    estimatedTime.textContent = `${hours}시간 ${minutes}분`;
+                }
+            } else {
+                processSpeed.textContent = '계산 중...';
+                estimatedTime.textContent = '계산 중...';
+            }
+            
+            // 진행률에 따른 색상 변경
+            if (percentage < 30) {
+                progressFill.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
+            } else if (percentage < 70) {
+                progressFill.style.background = 'linear-gradient(135deg, #feca57, #ff9ff3)';
+            } else {
+                progressFill.style.background = 'linear-gradient(135deg, #48dbfb, #0abde3)';
+            }
+            
+            // 완료 시 녹색으로 변경
+            if (percentage >= 100) {
+                progressFill.style.background = 'linear-gradient(135deg, #1dd1a1, #10ac84)';
+                progressText.textContent = `${total} / ${total} 완료 (100%) - 처리 완료!`;
+                processSpeed.textContent = '완료!';
+                estimatedTime.textContent = '완료!';
+                currentStepEl.textContent = '모든 상품 처리 완료!';
             }
         }
 
@@ -1208,9 +1287,17 @@
             const convertBtn = document.getElementById('convertBtn');
             const downloadSection = document.getElementById('downloadSection');
             
+            // 로딩 시작 - 시간 추적 시작
+            processingStartTime = Date.now();
             loading.style.display = 'block';
             convertBtn.disabled = true;
+            convertBtn.innerHTML = '⏳ Excel로 변환 중...';
+            convertBtn.style.opacity = '0.6';
+            convertBtn.style.cursor = 'not-allowed';
             downloadSection.style.display = 'none';
+            
+            // 진행률 초기화
+            updateProgress(0, jsonData.length, '🔄 변환 준비 중...', '시스템 초기화');
 
             try {
                 const marginRate = parseFloat(document.getElementById('marginRate').value) / 100;
@@ -1221,33 +1308,56 @@
                 }
 
                 // 로딩 메시지 설정
-                let loadingMessage = 'Excel 파일을 변환하는 중...';
+                let baseLoadingMessage = '';
                 if (useGpt && !skipImageUpload) {
-                    loadingMessage = 'GPT로 상품 개선 및 이미지 업로드 중...';
+                    baseLoadingMessage = '🤖 GPT 개선 및 📷 이미지 업로드 중...';
                 } else if (useGpt && skipImageUpload) {
-                    loadingMessage = 'GPT로 상품 개선 및 이미지 매칭 중...';
+                    baseLoadingMessage = '🤖 GPT 개선 및 🔗 이미지 매칭 중...';
                 } else if (!useGpt && !skipImageUpload) {
-                    loadingMessage = '이미지 업로드 및 Excel 변환 중...';
-                } else if (!useGpt && skipImageUpload) {
-                    loadingMessage = '이미지 매칭 및 Excel 변환 중...';
+                    baseLoadingMessage = '📷 이미지 업로드 및 📊 Excel 변환 중...';
+                } else {
+                    baseLoadingMessage = '🔗 이미지 매칭 및 📊 Excel 변환 중...';
                 }
 
-                document.getElementById('loadingText').textContent = loadingMessage;
+                updateProgress(0, jsonData.length, baseLoadingMessage, '데이터 분석 중');
+                
+                // 약간의 딜레이로 UI 업데이트 보장
+                await new Promise(resolve => setTimeout(resolve, 800));
 
-                let gptFailCount = 0;
                 const excelData = await priceParser.convertToExcelFormat(
                     jsonData, 
                     marginRate, 
                     useGpt,
                     skipImageUpload,
                     (current, total, status) => {
-                        updateProgress(current, total, status || loadingMessage);
+                        const detailStatus = status || baseLoadingMessage;
+                        let currentStep = '';
+                        
+                        if (useGpt && !skipImageUpload) {
+                            currentStep = 'GPT 개선 + 이미지 업로드';
+                        } else if (useGpt && skipImageUpload) {
+                            currentStep = 'GPT 개선 + 이미지 매칭';
+                        } else if (!useGpt && !skipImageUpload) {
+                            currentStep = '이미지 업로드';
+                        } else {
+                            currentStep = '이미지 매칭';
+                        }
+                        
+                        updateProgress(current, total, `${detailStatus} (${current}/${total})`, currentStep);
                     }
                 );
+                
+                // Excel 파일 생성 단계
+                updateProgress(jsonData.length, jsonData.length, '📊 Excel 파일 생성 중...', 'Excel 파일 생성');
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
                 const worksheet = XLSX.utils.aoa_to_sheet(excelData);
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
+                
+                // 다운로드 준비
+                updateProgress(jsonData.length, jsonData.length, '💾 다운로드 준비 중...', '다운로드 준비');
+                await new Promise(resolve => setTimeout(resolve, 300));
                 
                 const downloadSuccess = downloadExcelFile(workbook, filename);
                 
@@ -1255,6 +1365,10 @@
                     lastExcelData = excelData;
                     lastFilename = filename;
                     
+                    // 최종 완료 상태 업데이트
+                    updateProgress(jsonData.length, jsonData.length, '✅ 변환 완료!', '다운로드 완료');
+                    
+                    // 성공 메시지
                     let successMessage = `✅ ${filename} 파일 다운로드가 완료되었습니다! (${jsonData.length}개 상품)`;
                     if (useGpt) {
                         successMessage += `\n🤖 GPT로 상품명과 설명이 개선되었습니다.`;
@@ -1265,11 +1379,23 @@
                         successMessage += `\n🔗 기존 이미지가 매칭되었습니다.`;
                     }
                     
+                    // 처리 시간 계산
+                    const totalTime = ((Date.now() - processingStartTime) / 1000).toFixed(1);
+                    successMessage += `\n⏱️ 처리 시간: ${totalTime}초`;
+                    
                     showAlert(successMessage, 'success');
                     downloadSection.style.display = 'block';
-                    convertBtn.innerHTML = '🔄 다시 변환 및 다운로드';
+                    
+                    // 버튼 상태 성공으로 변경
+                    convertBtn.innerHTML = '✅ 변환 완료 - 다시 변환하기';
+                    convertBtn.style.background = 'linear-gradient(135deg, #1dd1a1, #10ac84)';
+                    
                 } else {
                     showAlert('❌ 다운로드에 실패했습니다. 브라우저 설정을 확인해주세요.', 'error');
+                    
+                    // 버튼 상태 실패로 변경
+                    convertBtn.innerHTML = '❌ 변환 실패 - 다시 시도';
+                    convertBtn.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
                 }
                 
             } catch (error) {
@@ -1279,11 +1405,31 @@
                 }
                 showAlert(errorMessage, 'error');
                 console.error('변환 오류:', error);
+                
+                // 버튼 상태 오류로 변경
+                convertBtn.innerHTML = '❌ 변환 실패 - 다시 시도';
+                convertBtn.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
+                
             } finally {
-                loading.style.display = 'none';
-                convertBtn.disabled = false;
-                document.getElementById('progressFill').style.width = '0%';
-                document.getElementById('progressText').textContent = '0 / 0 완료';
+                // 로딩 상태 해제 (3초 후)
+                setTimeout(() => {
+                    loading.style.display = 'none';
+                    convertBtn.disabled = false;
+                    convertBtn.style.opacity = '1';
+                    convertBtn.style.cursor = 'pointer';
+                    
+                    // 버튼 원래 상태로 복귀
+                    convertBtn.innerHTML = '🔄 Excel로 변환 및 다운로드';
+                    convertBtn.style.background = 'linear-gradient(135deg, #764ba2, #667eea)';
+                    
+                    // 진행률 리셋
+                    document.getElementById('progressFill').style.width = '0%';
+                    document.getElementById('progressText').textContent = '0 / 0 완료';
+                    document.getElementById('progressFill').style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                    
+                    // 처리 시간 변수 리셋
+                    processingStartTime = null;
+                }, 3000);
             }
         }
 
