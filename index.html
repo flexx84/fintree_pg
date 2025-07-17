@@ -335,7 +335,7 @@
         <!-- 기본 변환 설정 -->
         <div class="settings">
             <h3>⚙️ 변환 설정</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
                 <div class="setting-item">
                     <label for="marginRate">이익률 (%):</label>
                     <input type="number" id="marginRate" value="40" min="0" max="100" step="0.1" />
@@ -344,18 +344,38 @@
                     <label for="filename">파일명:</label>
                     <input type="text" id="filename" value="products.xlsx" />
                 </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
                 <div class="setting-item">
-                    <label for="useGpt">GPT 사용:</label>
-                    <input type="checkbox" id="useGpt" checked style="width: auto; margin-top: 10px;" />
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="useGpt" checked style="width: auto;" />
+                        <span>🤖 GPT 사용</span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="skipImageUpload" style="width: auto;" />
+                        <span>🚫 이미지 업로드 제외</span>
+                    </label>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button class="btn btn-primary btn-small" onclick="clearImageCache()">🗑️ 이미지 캐시 삭제</button>
+                <button class="btn btn-success btn-small" onclick="showImageCache()">📷 저장된 이미지 확인</button>
+            </div>
+            <div style="margin-top: 15px; padding: 15px; background: #e8f4fd; border-radius: 8px; border-left: 4px solid #0066cc;">
+                <h4 style="margin: 0 0 10px 0; color: #0066cc;">📷 이미지 처리 옵션</h4>
+                <div style="font-size: 13px; color: #0066cc; line-height: 1.5;">
+                    <p style="margin: 0 0 8px 0;"><strong>✅ 이미지 업로드 (기본):</strong> 원본 이미지를 이미지BB에 업로드하여 안정적인 링크 생성</p>
+                    <p style="margin: 0;"><strong>🚫 이미지 업로드 제외:</strong> 이미 업로드된 이미지를 이미지BB에서 찾아서 매칭 (빠른 변환)</p>
                 </div>
             </div>
             <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px; color: #856404;">
                 💡 <strong>GPT 사용 시 주의사항:</strong><br>
-                • 상품명과 상품설명이 모두 개선되어 API 비용이 증가할 수 있습니다<br>
+                • 상품명, 기본설명, 상품설명이 모두 개선되어 API 비용이 증가할 수 있습니다<br>
+                • 이미지 업로드 시 추가 시간이 소요됩니다 (상품당 약 2-5초)<br>
                 • 미리보기에서도 처음 3개 상품에 대해 GPT API가 호출됩니다<br>
-                • 브라우저 CORS 정책으로 인해 오류가 발생할 수 있습니다<br>
-                • 오류 발생 시 "API Key 테스트"를 눌러 해결 방법을 확인하세요<br>
-                • GPT 처리 실패 시 원본 텍스트가 유지되며 변환은 계속 진행됩니다
+                • 오류 발생 시 "API Key 테스트"를 눌러 해결 방법을 확인하세요
             </div>
         </div>
         
@@ -381,6 +401,10 @@
                 <div class="progress-fill" id="progressFill" style="width: 0%"></div>
             </div>
             <p id="progressText" style="font-size: 14px; color: #666;">0 / 0 완료</p>
+            <div id="processStatus" style="margin-top: 10px; padding: 10px; background: #f0f1ff; border-radius: 5px; font-size: 12px; color: #667eea; display: none;">
+                <div id="gptStatus">🤖 GPT 처리: 대기 중...</div>
+                <div id="imageStatus">📷 이미지 처리: 대기 중...</div>
+            </div>
         </div>
         
         <!-- 변환 버튼 -->
@@ -825,6 +849,34 @@
                     await showPreview(jsonData.slice(0, 3));
                 }
             });
+            
+            // 이미지 업로드 제외 체크박스 변경 시 안내 메시지 업데이트
+            document.getElementById('skipImageUpload').addEventListener('change', function() {
+                const isChecked = this.checked;
+                const infoDiv = document.querySelector('.settings > div:last-child');
+                
+                if (isChecked) {
+                    infoDiv.innerHTML = `
+                        <div style="margin-top: 15px; padding: 10px; background: #e8f4fd; border-radius: 5px; font-size: 12px; color: #0066cc;">
+                            💡 <strong>이미지 업로드 제외 모드:</strong><br>
+                            • 이미 업로드된 이미지를 이미지BB에서 찾아서 매칭합니다<br>
+                            • 새로운 이미지 업로드는 하지 않아 변환 속도가 빠릅니다<br>
+                            • 이전에 업로드한 이미지가 없으면 원본 URL을 사용합니다<br>
+                            • GPT 사용 시 텍스트 개선만 진행됩니다
+                        </div>
+                    `;
+                } else {
+                    infoDiv.innerHTML = `
+                        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px; color: #856404;">
+                            💡 <strong>GPT 사용 시 주의사항:</strong><br>
+                            • 상품명, 기본설명, 상품설명이 모두 개선되어 API 비용이 증가할 수 있습니다<br>
+                            • 이미지 업로드 시 추가 시간이 소요됩니다 (상품당 약 2-5초)<br>
+                            • 미리보기에서도 처음 3개 상품에 대해 GPT API가 호출됩니다<br>
+                            • 오류 발생 시 "API Key 테스트"를 눌러 해결 방법을 확인하세요
+                        </div>
+                    `;
+                }
+            });
         }
 
         function saveApiKey() {
@@ -1124,13 +1176,18 @@
             preview.style.display = 'block';
         }
 
-        function updateProgress(current, total) {
+        function updateProgress(current, total, statusText = '') {
             const progressFill = document.getElementById('progressFill');
             const progressText = document.getElementById('progressText');
+            const loadingText = document.getElementById('loadingText');
             const percentage = (current / total) * 100;
             
             progressFill.style.width = `${percentage}%`;
             progressText.textContent = `${current} / ${total} 완료`;
+            
+            if (statusText) {
+                loadingText.textContent = statusText;
+            }
         }
 
         async function convertToExcel() {
@@ -1140,6 +1197,8 @@
             }
 
             const useGpt = document.getElementById('useGpt').checked;
+            const skipImageUpload = document.getElementById('skipImageUpload').checked;
+            
             if (useGpt && !localStorage.getItem('gptApiKey')) {
                 showAlert('GPT 사용을 위해 API Key를 설정해주세요.', 'error');
                 return;
@@ -1161,17 +1220,28 @@
                     filename += '.xlsx';
                 }
 
-                document.getElementById('loadingText').textContent = 
-                    useGpt ? 'GPT로 상품명과 상품설명을 개선하고 Excel 파일을 변환하는 중...' : 'Excel 파일을 변환하는 중...';
+                // 로딩 메시지 설정
+                let loadingMessage = 'Excel 파일을 변환하는 중...';
+                if (useGpt && !skipImageUpload) {
+                    loadingMessage = 'GPT로 상품 개선 및 이미지 업로드 중...';
+                } else if (useGpt && skipImageUpload) {
+                    loadingMessage = 'GPT로 상품 개선 및 이미지 매칭 중...';
+                } else if (!useGpt && !skipImageUpload) {
+                    loadingMessage = '이미지 업로드 및 Excel 변환 중...';
+                } else if (!useGpt && skipImageUpload) {
+                    loadingMessage = '이미지 매칭 및 Excel 변환 중...';
+                }
+
+                document.getElementById('loadingText').textContent = loadingMessage;
 
                 let gptFailCount = 0;
                 const excelData = await priceParser.convertToExcelFormat(
                     jsonData, 
                     marginRate, 
                     useGpt,
-                    (current, total) => {
-                        updateProgress(current, total);
-                        // GPT 실패 카운트 추적 (실제 구현 시 필요)
+                    skipImageUpload,
+                    (current, total, status) => {
+                        updateProgress(current, total, status || loadingMessage);
                     }
                 );
                 
@@ -1187,7 +1257,12 @@
                     
                     let successMessage = `✅ ${filename} 파일 다운로드가 완료되었습니다! (${jsonData.length}개 상품)`;
                     if (useGpt) {
-                        successMessage += `\n※ GPT 처리 중 일부 상품에서 오류가 발생했을 수 있습니다. 콘솔을 확인하세요.`;
+                        successMessage += `\n🤖 GPT로 상품명과 설명이 개선되었습니다.`;
+                    }
+                    if (!skipImageUpload) {
+                        successMessage += `\n📷 이미지가 이미지BB에 업로드되었습니다.`;
+                    } else {
+                        successMessage += `\n🔗 기존 이미지가 매칭되었습니다.`;
                     }
                     
                     showAlert(successMessage, 'success');
@@ -1264,6 +1339,39 @@
                 showAlert('❌ 다운로드 중 오류가 발생했습니다.', 'error');
                 console.error('다운로드 오류:', error);
             }
+        }
+
+        function clearImageCache() {
+            const confirm = window.confirm('저장된 이미지 캐시를 모두 삭제하시겠습니까?\n\n삭제 후에는 "이미지 업로드 제외" 옵션을 사용할 수 없습니다.');
+            if (confirm) {
+                localStorage.removeItem('imgbbImageMap');
+                priceParser.uploadedImageMap.clear();
+                showAlert('✅ 이미지 캐시가 삭제되었습니다.', 'success');
+            }
+        }
+
+        function showImageCache() {
+            const savedImages = localStorage.getItem('imgbbImageMap');
+            if (!savedImages) {
+                showAlert('저장된 이미지가 없습니다.', 'info');
+                return;
+            }
+
+            const imageMap = JSON.parse(savedImages);
+            const imageCount = Object.keys(imageMap).length;
+            
+            if (imageCount === 0) {
+                showAlert('저장된 이미지가 없습니다.', 'info');
+                return;
+            }
+
+            const imageList = Object.keys(imageMap).slice(0, 10).map(key => 
+                `• ${key} → ${imageMap[key]}`
+            ).join('\n');
+
+            const moreText = imageCount > 10 ? `\n... 외 ${imageCount - 10}개 더` : '';
+            
+            alert(`📷 저장된 이미지 (${imageCount}개):\n\n${imageList}${moreText}`);
         }
 
         function forceDownload() {
