@@ -864,31 +864,11 @@
             
             // 이미지 업로드 제외 체크박스 변경 시 안내 메시지 업데이트
             document.getElementById('skipImageUpload').addEventListener('change', function() {
-                const isChecked = this.checked;
-                const infoDiv = document.querySelector('.settings > div:last-child');
-                
-                if (isChecked) {
-                    infoDiv.innerHTML = `
-                        <div style="margin-top: 15px; padding: 10px; background: #e8f4fd; border-radius: 5px; font-size: 12px; color: #0066cc;">
-                            💡 <strong>이미지 업로드 제외 모드:</strong><br>
-                            • 이미 업로드된 이미지를 이미지BB에서 찾아서 매칭합니다<br>
-                            • 새로운 이미지 업로드는 하지 않아 변환 속도가 빠릅니다<br>
-                            • 이전에 업로드한 이미지가 없으면 원본 URL을 사용합니다<br>
-                            • GPT 사용 시 텍스트 개선만 진행됩니다
-                        </div>
-                    `;
-                } else {
-                    infoDiv.innerHTML = `
-                        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px; color: #856404;">
-                            💡 <strong>GPT 사용 시 주의사항:</strong><br>
-                            • 상품명, 기본설명, 상품설명이 모두 개선되어 API 비용이 증가할 수 있습니다<br>
-                            • 이미지 업로드 시 추가 시간이 소요됩니다 (상품당 약 2-5초)<br>
-                            • 미리보기에서도 처음 3개 상품에 대해 GPT API가 호출됩니다<br>
-                            • 오류 발생 시 "API Key 테스트"를 눌러 해결 방법을 확인하세요
-                        </div>
-                    `;
-                }
+                checkImageCacheStatus();
             });
+            
+            // 페이지 로드 시 이미지 캐시 상태 확인
+            checkImageCacheStatus();
         }
 
         function saveApiKey() {
@@ -1283,6 +1263,17 @@
                 return;
             }
 
+            // 이미지 업로드 제외 모드 체크
+            if (skipImageUpload) {
+                const savedImages = localStorage.getItem('imgbbImageMap');
+                if (!savedImages) {
+                    const confirm = window.confirm('저장된 이미지가 없습니다.\n\n이미지 업로드 제외 모드에서는 이전에 업로드한 이미지가 필요합니다.\n원본 이미지 URL을 사용하여 계속 진행하시겠습니까?');
+                    if (!confirm) {
+                        return;
+                    }
+                }
+            }
+
             const loading = document.getElementById('loading');
             const convertBtn = document.getElementById('convertBtn');
             const downloadSection = document.getElementById('downloadSection');
@@ -1324,6 +1315,7 @@
                 // 약간의 딜레이로 UI 업데이트 보장
                 await new Promise(resolve => setTimeout(resolve, 800));
 
+                // 변환 실행
                 const excelData = await priceParser.convertToExcelFormat(
                     jsonData, 
                     marginRate, 
@@ -1347,6 +1339,11 @@
                     }
                 );
                 
+                // 변환 결과 검증
+                if (!excelData || excelData.length < 2) {
+                    throw new Error('변환된 데이터가 없습니다. 입력 파일을 확인해주세요.');
+                }
+                
                 // Excel 파일 생성 단계
                 updateProgress(jsonData.length, jsonData.length, '📊 Excel 파일 생성 중...', 'Excel 파일 생성');
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -1368,15 +1365,19 @@
                     // 최종 완료 상태 업데이트
                     updateProgress(jsonData.length, jsonData.length, '✅ 변환 완료!', '다운로드 완료');
                     
-                    // 성공 메시지
+                    // 성공 메시지 생성
                     let successMessage = `✅ ${filename} 파일 다운로드가 완료되었습니다! (${jsonData.length}개 상품)`;
+                    
                     if (useGpt) {
                         successMessage += `\n🤖 GPT로 상품명과 설명이 개선되었습니다.`;
                     }
+                    
                     if (!skipImageUpload) {
                         successMessage += `\n📷 이미지가 이미지BB에 업로드되었습니다.`;
                     } else {
-                        successMessage += `\n🔗 기존 이미지가 매칭되었습니다.`;
+                        const savedImages = localStorage.getItem('imgbbImageMap');
+                        const imageCount = savedImages ? Object.keys(JSON.parse(savedImages)).length : 0;
+                        successMessage += `\n🔗 기존 이미지가 매칭되었습니다. (${imageCount}개 이미지 캐시 사용)`;
                     }
                     
                     // 처리 시간 계산
@@ -1391,24 +1392,33 @@
                     convertBtn.style.background = 'linear-gradient(135deg, #1dd1a1, #10ac84)';
                     
                 } else {
-                    showAlert('❌ 다운로드에 실패했습니다. 브라우저 설정을 확인해주세요.', 'error');
-                    
-                    // 버튼 상태 실패로 변경
-                    convertBtn.innerHTML = '❌ 변환 실패 - 다시 시도';
-                    convertBtn.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
+                    throw new Error('다운로드에 실패했습니다. 브라우저 설정을 확인해주세요.');
                 }
                 
             } catch (error) {
+                console.error('변환 실행 오류:', error);
+                
                 let errorMessage = '❌ 변환 중 오류가 발생했습니다: ' + error.message;
+                
+                // 구체적인 오류 타입별 안내
                 if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
                     errorMessage += '\n\n🔧 CORS 문제로 보입니다. API Key 테스트를 눌러 해결 방법을 확인하세요.';
+                } else if (error.message.includes('이미지')) {
+                    errorMessage += '\n\n📷 이미지 처리 중 문제가 발생했습니다. "이미지 업로드 제외" 옵션을 사용해보세요.';
+                } else if (error.message.includes('GPT')) {
+                    errorMessage += '\n\n🤖 GPT 처리 중 문제가 발생했습니다. "GPT 사용" 옵션을 해제하고 다시 시도해보세요.';
+                } else if (error.message.includes('변환된 데이터가 없습니다')) {
+                    errorMessage += '\n\n📄 JSON 파일 형식을 확인해주세요. 올바른 상품 데이터가 포함되어 있는지 확인하세요.';
                 }
+                
                 showAlert(errorMessage, 'error');
-                console.error('변환 오류:', error);
                 
                 // 버튼 상태 오류로 변경
                 convertBtn.innerHTML = '❌ 변환 실패 - 다시 시도';
                 convertBtn.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
+                
+                // 진행률 오류 표시
+                updateProgress(0, jsonData.length, '❌ 변환 실패', '오류 발생');
                 
             } finally {
                 // 로딩 상태 해제 (3초 후)
@@ -1488,18 +1498,28 @@
         }
 
         function clearImageCache() {
-            const confirm = window.confirm('저장된 이미지 캐시를 모두 삭제하시겠습니까?\n\n삭제 후에는 "이미지 업로드 제외" 옵션을 사용할 수 없습니다.');
+            const savedImages = localStorage.getItem('imgbbImageMap');
+            const imageCount = savedImages ? Object.keys(JSON.parse(savedImages)).length : 0;
+            
+            if (imageCount === 0) {
+                showAlert('삭제할 이미지 캐시가 없습니다.', 'info');
+                return;
+            }
+            
+            const confirm = window.confirm(`저장된 이미지 캐시를 모두 삭제하시겠습니까?\n\n현재 ${imageCount}개의 이미지가 저장되어 있습니다.\n삭제 후에는 "이미지 업로드 제외" 옵션을 사용할 수 없습니다.`);
+            
             if (confirm) {
                 localStorage.removeItem('imgbbImageMap');
                 priceParser.uploadedImageMap.clear();
-                showAlert('✅ 이미지 캐시가 삭제되었습니다.', 'success');
+                showAlert(`✅ ${imageCount}개의 이미지 캐시가 삭제되었습니다.`, 'success');
             }
         }
 
         function showImageCache() {
             const savedImages = localStorage.getItem('imgbbImageMap');
+            
             if (!savedImages) {
-                showAlert('저장된 이미지가 없습니다.', 'info');
+                showAlert('💡 저장된 이미지 캐시가 없습니다.\n\n이미지 업로드를 한 번 실행하면 이미지들이 이미지BB에 저장되어 캐시에 등록됩니다.', 'info');
                 return;
             }
 
@@ -1507,17 +1527,92 @@
             const imageCount = Object.keys(imageMap).length;
             
             if (imageCount === 0) {
-                showAlert('저장된 이미지가 없습니다.', 'info');
+                showAlert('저장된 이미지 캐시가 없습니다.', 'info');
                 return;
             }
 
-            const imageList = Object.keys(imageMap).slice(0, 10).map(key => 
-                `• ${key} → ${imageMap[key]}`
-            ).join('\n');
-
-            const moreText = imageCount > 10 ? `\n... 외 ${imageCount - 10}개 더` : '';
+            // 캐시 정보를 HTML로 표시
+            const cacheInfoHtml = `
+                <div style="background: #f8f9ff; padding: 15px; border-radius: 10px; margin: 10px 0;">
+                    <h3 style="color: #667eea; margin: 0 0 15px 0;">📷 이미지 캐시 정보</h3>
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: bold; color: #333;">총 저장된 이미지:</span>
+                            <span style="color: #667eea; font-weight: bold; font-size: 18px;">${imageCount}개</span>
+                        </div>
+                    </div>
+                    <div style="background: white; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;">
+                        <div style="font-weight: bold; color: #333; margin-bottom: 10px;">이미지 목록:</div>
+                        ${Object.entries(imageMap).slice(0, 10).map(([key, value]) => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
+                                <span style="color: #666; font-size: 14px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${key}</span>
+                                <a href="${value}" target="_blank" style="color: #667eea; text-decoration: none; font-size: 12px;">🔗 보기</a>
+                            </div>
+                        `).join('')}
+                        ${imageCount > 10 ? `<div style="text-align: center; color: #999; font-size: 12px; margin-top: 10px;">... 외 ${imageCount - 10}개 더</div>` : ''}
+                    </div>
+                    <div style="background: #e8f4fd; padding: 10px; border-radius: 8px; margin-top: 15px;">
+                        <div style="font-size: 12px; color: #0066cc; line-height: 1.4;">
+                            💡 <strong>이미지 캐시 활용법:</strong><br>
+                            • "이미지 업로드 제외" 체크박스를 사용하면 이 캐시된 이미지들을 재사용합니다<br>
+                            • 같은 이미지를 포함한 상품들을 빠르게 변환할 수 있습니다<br>
+                            • 캐시를 삭제하면 다시 이미지 업로드가 필요합니다
+                        </div>
+                    </div>
+                </div>
+            `;
             
-            alert(`📷 저장된 이미지 (${imageCount}개):\n\n${imageList}${moreText}`);
+            const alertDiv = document.getElementById('alert');
+            alertDiv.innerHTML = cacheInfoHtml;
+            alertDiv.className = 'alert info';
+            alertDiv.style.display = 'block';
+            
+            // 10초 후 자동 숨김
+            setTimeout(() => {
+                alertDiv.style.display = 'none';
+            }, 10000);
+        }
+
+        function checkImageCacheStatus() {
+            const savedImages = localStorage.getItem('imgbbImageMap');
+            const imageCount = savedImages ? Object.keys(JSON.parse(savedImages)).length : 0;
+            
+            // 체크박스 상태에 따른 안내 메시지 업데이트
+            const skipImageUpload = document.getElementById('skipImageUpload').checked;
+            const infoDiv = document.querySelector('.settings > div:last-child');
+            
+            if (skipImageUpload) {
+                if (imageCount > 0) {
+                    infoDiv.innerHTML = `
+                        <div style="margin-top: 15px; padding: 10px; background: #e8f4fd; border-radius: 5px; font-size: 12px; color: #0066cc;">
+                            💡 <strong>이미지 업로드 제외 모드 (${imageCount}개 이미지 캐시 사용)</strong><br>
+                            • 저장된 이미지를 이미지BB에서 찾아서 매칭합니다<br>
+                            • 새로운 이미지 업로드는 하지 않아 변환 속도가 빠릅니다<br>
+                            • 매칭되지 않는 이미지는 원본 URL을 사용합니다<br>
+                            • GPT 사용 시 텍스트 개선만 진행됩니다
+                        </div>
+                    `;
+                } else {
+                    infoDiv.innerHTML = `
+                        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px; color: #856404;">
+                            ⚠️ <strong>이미지 캐시가 없습니다</strong><br>
+                            • 저장된 이미지가 없어 모든 이미지가 원본 URL을 사용합니다<br>
+                            • 안정적인 이미지 링크를 위해 "이미지 업로드 제외" 체크를 해제하는 것을 권장합니다<br>
+                            • 첫 번째 변환 시에는 이미지 업로드를 실행하여 캐시를 만드세요
+                        </div>
+                    `;
+                }
+            } else {
+                infoDiv.innerHTML = `
+                    <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px; color: #856404;">
+                        💡 <strong>GPT 사용 시 주의사항:</strong><br>
+                        • 상품명, 기본설명, 상품설명이 모두 개선되어 API 비용이 증가할 수 있습니다<br>
+                        • 이미지 업로드 시 추가 시간이 소요됩니다 (상품당 약 2-5초)<br>
+                        • 미리보기에서도 처음 3개 상품에 대해 GPT API가 호출됩니다<br>
+                        • 오류 발생 시 "API Key 테스트"를 눌러 해결 방법을 확인하세요
+                    </div>
+                `;
+            }
         }
 
         function forceDownload() {
