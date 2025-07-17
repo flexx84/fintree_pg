@@ -1,729 +1,960 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GPT 연동 JSON to Excel 변환기</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2.5em;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .settings {
+        background: #f8f9ff;
+        padding: 20px;
+        border-radius: 10px;
+      }
+
+      .settings h3 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 10px;
+      }
+
+      .setting-item {
+        margin-bottom: 15px;
+      }
+
+      .setting-item:last-child {
+        margin-bottom: 0;
+      }
+
+      label {
+        display: block;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      input[type="text"],
+      input[type="number"],
+      input[type="password"],
+      textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+      }
+
+      input[type="text"]:focus,
+      input[type="number"]:focus,
+      input[type="password"]:focus,
+      textarea:focus {
+        border-color: #667eea;
+        outline: none;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+
+      .upload-area {
+        border: 3px dashed #667eea;
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        margin: 20px 0;
+        background: #f8f9ff;
+        transition: all 0.3s ease;
+      }
+
+      .upload-area:hover {
+        border-color: #764ba2;
+        background: #f0f1ff;
+      }
+
+      .upload-area.dragover {
+        border-color: #764ba2;
+        background: #e8eaff;
+        transform: scale(1.02);
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        margin: 5px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+      }
+
+      .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+      }
+
+      .btn-small {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+
+      .convert-btn {
+        background: linear-gradient(135deg, #764ba2, #667eea);
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        width: 100%;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .convert-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(118, 75, 162, 0.3);
+      }
+
+      .convert-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .alert.success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+
+      .alert.error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+
+      .alert.info {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        color: #667eea;
+        font-weight: bold;
+        background: #f0f1ff;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+      }
+
+      .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
-        
-        .container {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        100% {
+          transform: rotate(360deg);
         }
-        
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+      }
+
+      .download-section {
+        margin-top: 20px;
+        animation: slideDown 0.5s ease-out;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
         }
-        
+
+        getDefaultPrompt() {
+          return`당신은 전문적인 상품 설명 작성자입니다. 주어진 상품 설명을 다음과 같이 개선해주세요: 1
+              고객의 관심을 끌 수 있는 매력적인 제목으로 시작 2 상품의 주요
+              특징과 장점을 명확하게 설명 3 고객이 구매하고 싶어하는 감정을
+              불러일으키는 설명 4 전문적이고 신뢰할 수 있는 톤으로 작성 5 HTML
+              태그는 유지하되,
+            가독성을 높이도록 정리 6 상품의 품질과 가치를 강조 기존 내용의 핵심
+              정보는 유지하면서 더 매력적이고 판매력 있는 설명으로
+              개선해주세요.`;
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background: #f0f1ff;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 10px 0;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        transition: width 0.3s ease;
+        border-radius: 10px;
+      }
+
+      .preview {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9ff;
+        border-radius: 10px;
+        display: none;
+      }
+
+      .preview-item {
+        background: white;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+
+      .saved-indicator {
+        color: #28a745;
+        font-size: 12px;
+        margin-top: 5px;
+      }
+
+      @media (max-width: 768px) {
         .settings-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🤖 GPT 연동 JSON to Excel 변환기</h1>
+
+      <div class="alert" id="alert"></div>
+
+      <!-- GPT 설정 및 프롬프트 설정 -->
+      <div class="settings-grid">
+        <div class="settings">
+          <h3>🔑 GPT API 설정</h3>
+          <div class="setting-item">
+            <label for="apiKey">OpenAI API Key:</label>
+            <input type="password" id="apiKey" placeholder="sk-..." />
+            <div class="saved-indicator" id="apiKeySaved" style="display: none">
+              ✅ API Key 저장됨
+            </div>
+          </div>
+          <button class="btn btn-primary btn-small" onclick="saveApiKey()">
+            💾 API Key 저장
+          </button>
+          <button class="btn btn-success btn-small" onclick="testApiKey()">
+            🧪 API Key 테스트
+          </button>
+        </div>
+
+        <div class="settings">
+          <h3>📝 프롬프트 설정</h3>
+          <div class="setting-item">
+            <label for="gptPrompt">GPT 프롬프트:</label>
+            <textarea
+              id="gptPrompt"
+              placeholder="상품 설명을 개선하는 프롬프트를 입력하세요..."
+            ></textarea>
+            <div class="saved-indicator" id="promptSaved" style="display: none">
+              ✅ 프롬프트 저장됨
+            </div>
+          </div>
+          <button class="btn btn-primary btn-small" onclick="savePrompt()">
+            💾 프롬프트 저장
+          </button>
+          <button
+            class="btn btn-success btn-small"
+            onclick="loadDefaultPrompt()"
+          >
+            🔄 기본 프롬프트 로드
+          </button>
+        </div>
+      </div>
+
+      <!-- 기본 변환 설정 -->
+      <div class="settings">
+        <h3>⚙️ 변환 설정</h3>
+        <div
+          style="
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .settings {
-            background: #f8f9ff;
-            padding: 20px;
-            border-radius: 10px;
-        }
-        
-        .settings h3 {
-            margin-top: 0;
-            color: #333;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-        }
-        
-        .setting-item {
             margin-bottom: 15px;
-        }
-        
-        .setting-item:last-child {
-            margin-bottom: 0;
-        }
-        
-        label {
-            display: block;
+          "
+        >
+          <div class="setting-item">
+            <label for="marginRate">이익률 (%):</label>
+            <input
+              type="number"
+              id="marginRate"
+              value="40"
+              min="0"
+              max="100"
+              step="0.1"
+            />
+          </div>
+          <div class="setting-item">
+            <label for="filename">파일명:</label>
+            <input type="text" id="filename" value="products.xlsx" />
+          </div>
+        </div>
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 15px;
+          "
+        >
+          <div class="setting-item">
+            <label style="display: flex; align-items: center; gap: 10px">
+              <input type="checkbox" id="useGpt" checked style="width: auto" />
+              <span>🤖 GPT 사용</span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <label style="display: flex; align-items: center; gap: 10px">
+              <input type="checkbox" id="skipImageUpload" style="width: auto" />
+              <span>🚫 이미지 업로드 제외</span>
+            </label>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 15px">
+          <button class="btn btn-primary btn-small" onclick="clearImageCache()">
+            🗑️ 이미지 캐시 삭제
+          </button>
+          <button class="btn btn-success btn-small" onclick="showImageCache()">
+            📷 저장된 이미지 확인
+          </button>
+        </div>
+        <div
+          style="
+            margin-top: 15px;
+            padding: 15px;
+            background: #e8f4fd;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+          "
+        >
+          <h4 style="margin: 0 0 10px 0; color: #0066cc">
+            📷 이미지 처리 옵션
+          </h4>
+          <div style="font-size: 13px; color: #0066cc; line-height: 1.5">
+            <p style="margin: 0 0 8px 0">
+              <strong>✅ 이미지 업로드 (기본):</strong> 원본 이미지를 이미지BB에
+              업로드하여 안정적인 링크 생성
+            </p>
+            <p style="margin: 0">
+              <strong>🚫 이미지 업로드 제외:</strong> 이미 업로드된 이미지를
+              이미지BB에서 찾아서 매칭 (빠른 변환)
+            </p>
+          </div>
+        </div>
+        <div
+          style="
+            margin-top: 15px;
+            padding: 10px;
+            background: #fff3cd;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #856404;
+          "
+        >
+          💡 <strong>GPT 사용 시 주의사항:</strong><br />
+          • 상품명, 기본설명, 상품설명이 모두 개선되어 API 비용이 증가할 수
+          있습니다<br />
+          • 이미지 업로드 시 추가 시간이 소요됩니다 (상품당 약 2-5초)<br />
+          • 미리보기에서도 처음 3개 상품에 대해 GPT API가 호출됩니다<br />
+          • 오류 발생 시 "API Key 테스트"를 눌러 해결 방법을 확인하세요
+        </div>
+      </div>
+
+      <!-- 파일 업로드 -->
+      <div class="upload-area" id="uploadArea">
+        <p style="font-size: 18px; color: #667eea; margin: 0 0 20px 0">
+          <strong>JSON 파일을 드래그하거나 클릭하여 업로드하세요</strong>
+        </p>
+        <button
+          class="btn btn-primary"
+          onclick="document.getElementById('fileInput').click()"
+        >
+          📁 파일 선택
+        </button>
+        <input type="file" id="fileInput" accept=".json" />
+        <p style="margin: 20px 0 0 0; color: #666">지원 형식: JSON (.json)</p>
+      </div>
+
+      <!-- 진행 상태 -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <h3 id="loadingText" style="color: #667eea; margin: 15px 0">
+          변환 중입니다...
+        </h3>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <p
+          id="progressText"
+          style="
+            font-size: 16px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 5px;
-        }
-        
-        input[type="text"], input[type="number"], input[type="password"], textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            box-sizing: border-box;
-            transition: border-color 0.3s;
-        }
-        
-        input[type="text"]:focus, input[type="number"]:focus, input[type="password"]:focus, textarea:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-        
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-        
-        .upload-area {
-            border: 3px dashed #667eea;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            margin: 20px 0;
-            background: #f8f9ff;
-            transition: all 0.3s ease;
-        }
-        
-        .upload-area:hover {
-            border-color: #764ba2;
-            background: #f0f1ff;
-        }
-        
-        .upload-area.dragover {
-            border-color: #764ba2;
-            background: #e8eaff;
-            transform: scale(1.02);
-        }
-        
-        input[type="file"] {
-            display: none;
-        }
-        
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            margin: 5px;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-        }
-        
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
-        }
-        
-        .btn-small {
-            padding: 8px 16px;
-            font-size: 12px;
-        }
-        
-        .convert-btn {
-            background: linear-gradient(135deg, #764ba2, #667eea);
-            color: white;
-            padding: 15px 40px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 18px;
-            font-weight: bold;
-            width: 100%;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-        }
-        
-        .convert-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 30px rgba(118, 75, 162, 0.3);
-        }
-        
-        .convert-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        .alert.success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-        
-        .alert.error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        
-        .alert.info {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
-        }
-        
-        .loading {
-            display: none;
-            text-align: center;
-            color: #667eea;
-            font-weight: bold;
-            background: #f0f1ff;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-        
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .download-section {
-            margin-top: 20px;
-            animation: slideDown 0.5s ease-out;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-
-            getDefaultPrompt() {
-                return `당신은 전문적인 상품 설명 작성자입니다. 주어진 상품 설명을 다음과 같이 개선해주세요:
-
-1. 고객의 관심을 끌 수 있는 매력적인 제목으로 시작
-2. 상품의 주요 특징과 장점을 명확하게 설명
-3. 고객이 구매하고 싶어하는 감정을 불러일으키는 설명
-4. 전문적이고 신뢰할 수 있는 톤으로 작성
-5. HTML 태그는 유지하되, 가독성을 높이도록 정리
-6. 상품의 품질과 가치를 강조
-
-기존 내용의 핵심 정보는 유지하면서 더 매력적이고 판매력 있는 설명으로 개선해주세요.`;
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #f0f1ff;
-            border-radius: 10px;
-            overflow: hidden;
             margin: 10px 0;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            transition: width 0.3s ease;
-            border-radius: 10px;
-        }
-        
-        .preview {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f8f9ff;
-            border-radius: 10px;
-            display: none;
-        }
-        
-        .preview-item {
-            background: white;
-            padding: 15px;
-            margin-bottom: 10px;
+          "
+        >
+          0 / 0 완료
+        </p>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: #f0f1ff;
             border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .saved-indicator {
-            color: #28a745;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        
-        @media (max-width: 768px) {
-            .settings-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🤖 GPT 연동 JSON to Excel 변환기</h1>
-        
-        <div class="alert" id="alert"></div>
-        
-        <!-- GPT 설정 및 프롬프트 설정 -->
-        <div class="settings-grid">
-            <div class="settings">
-                <h3>🔑 GPT API 설정</h3>
-                <div class="setting-item">
-                    <label for="apiKey">OpenAI API Key:</label>
-                    <input type="password" id="apiKey" placeholder="sk-..." />
-                    <div class="saved-indicator" id="apiKeySaved" style="display: none;">✅ API Key 저장됨</div>
-                </div>
-                <button class="btn btn-primary btn-small" onclick="saveApiKey()">💾 API Key 저장</button>
-                <button class="btn btn-success btn-small" onclick="testApiKey()">🧪 API Key 테스트</button>
+          "
+        >
+          <div style="text-align: center; flex: 1">
+            <div style="font-size: 12px; color: #666; margin-bottom: 5px">
+              처리 속도
             </div>
-            
-            <div class="settings">
-                <h3>📝 프롬프트 설정</h3>
-                <div class="setting-item">
-                    <label for="gptPrompt">GPT 프롬프트:</label>
-                    <textarea id="gptPrompt" placeholder="상품 설명을 개선하는 프롬프트를 입력하세요..."></textarea>
-                    <div class="saved-indicator" id="promptSaved" style="display: none;">✅ 프롬프트 저장됨</div>
-                </div>
-                <button class="btn btn-primary btn-small" onclick="savePrompt()">💾 프롬프트 저장</button>
-                <button class="btn btn-success btn-small" onclick="loadDefaultPrompt()">🔄 기본 프롬프트 로드</button>
+            <div
+              id="processSpeed"
+              style="font-size: 14px; font-weight: bold; color: #667eea"
+            >
+              계산 중...
             </div>
+          </div>
+          <div style="text-align: center; flex: 1">
+            <div style="font-size: 12px; color: #666; margin-bottom: 5px">
+              예상 남은 시간
+            </div>
+            <div
+              id="estimatedTime"
+              style="font-size: 14px; font-weight: bold; color: #667eea"
+            >
+              계산 중...
+            </div>
+          </div>
+          <div style="text-align: center; flex: 1">
+            <div style="font-size: 12px; color: #666; margin-bottom: 5px">
+              현재 단계
+            </div>
+            <div
+              id="currentStep"
+              style="font-size: 14px; font-weight: bold; color: #667eea"
+            >
+              준비 중...
+            </div>
+          </div>
         </div>
-        
-        <!-- 기본 변환 설정 -->
-        <div class="settings">
-            <h3>⚙️ 변환 설정</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
-                <div class="setting-item">
-                    <label for="marginRate">이익률 (%):</label>
-                    <input type="number" id="marginRate" value="40" min="0" max="100" step="0.1" />
-                </div>
-                <div class="setting-item">
-                    <label for="filename">파일명:</label>
-                    <input type="text" id="filename" value="products.xlsx" />
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
-                <div class="setting-item">
-                    <label style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="useGpt" checked style="width: auto;" />
-                        <span>🤖 GPT 사용</span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <label style="display: flex; align-items: center; gap: 10px;">
-                        <input type="checkbox" id="skipImageUpload" style="width: auto;" />
-                        <span>🚫 이미지 업로드 제외</span>
-                    </label>
-                </div>
-            </div>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button class="btn btn-primary btn-small" onclick="clearImageCache()">🗑️ 이미지 캐시 삭제</button>
-                <button class="btn btn-success btn-small" onclick="showImageCache()">📷 저장된 이미지 확인</button>
-            </div>
-            <div style="margin-top: 15px; padding: 15px; background: #e8f4fd; border-radius: 8px; border-left: 4px solid #0066cc;">
-                <h4 style="margin: 0 0 10px 0; color: #0066cc;">📷 이미지 처리 옵션</h4>
-                <div style="font-size: 13px; color: #0066cc; line-height: 1.5;">
-                    <p style="margin: 0 0 8px 0;"><strong>✅ 이미지 업로드 (기본):</strong> 원본 이미지를 이미지BB에 업로드하여 안정적인 링크 생성</p>
-                    <p style="margin: 0;"><strong>🚫 이미지 업로드 제외:</strong> 이미 업로드된 이미지를 이미지BB에서 찾아서 매칭 (빠른 변환)</p>
-                </div>
-            </div>
-            <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px; color: #856404;">
-                💡 <strong>GPT 사용 시 주의사항:</strong><br>
-                • 상품명, 기본설명, 상품설명이 모두 개선되어 API 비용이 증가할 수 있습니다<br>
-                • 이미지 업로드 시 추가 시간이 소요됩니다 (상품당 약 2-5초)<br>
-                • 미리보기에서도 처음 3개 상품에 대해 GPT API가 호출됩니다<br>
-                • 오류 발생 시 "API Key 테스트"를 눌러 해결 방법을 확인하세요
-            </div>
-        </div>
-        
-        <!-- 파일 업로드 -->
-        <div class="upload-area" id="uploadArea">
-            <p style="font-size: 18px; color: #667eea; margin: 0 0 20px 0;">
-                <strong>JSON 파일을 드래그하거나 클릭하여 업로드하세요</strong>
-            </p>
-            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                📁 파일 선택
+      </div>
+
+      <!-- 변환 버튼 -->
+      <button
+        class="convert-btn"
+        id="convertBtn"
+        disabled
+        onclick="convertToExcel()"
+      >
+        🔄 Excel로 변환 및 다운로드
+      </button>
+
+      <!-- 다운로드 섹션 -->
+      <div class="download-section" id="downloadSection" style="display: none">
+        <div
+          style="
+            text-align: center;
+            padding: 20px;
+            background: #d4edda;
+            border-radius: 10px;
+            margin-top: 20px;
+          "
+        >
+          <h3 style="color: #155724; margin: 0 0 10px 0">✅ 변환 완료!</h3>
+          <p style="color: #155724; margin: 0 0 15px 0">
+            Excel 파일이 성공적으로 생성되었습니다.
+          </p>
+          <div
+            style="
+              display: flex;
+              gap: 10px;
+              justify-content: center;
+              flex-wrap: wrap;
+            "
+          >
+            <button class="btn btn-primary" onclick="downloadAgain()">
+              📥 다시 다운로드
             </button>
-            <input type="file" id="fileInput" accept=".json" />
-            <p style="margin: 20px 0 0 0; color: #666;">
-                지원 형식: JSON (.json)
-            </p>
+            <button class="btn btn-success" onclick="forceDownload()">
+              💾 강제 다운로드
+            </button>
+          </div>
         </div>
-        
-        <!-- 진행 상태 -->
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <h3 id="loadingText" style="color: #667eea; margin: 15px 0;">변환 중입니다...</h3>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-            </div>
-            <p id="progressText" style="font-size: 16px; font-weight: bold; color: #333; margin: 10px 0;">0 / 0 완료</p>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f0f1ff; border-radius: 8px;">
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">처리 속도</div>
-                    <div id="processSpeed" style="font-size: 14px; font-weight: bold; color: #667eea;">계산 중...</div>
-                </div>
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">예상 남은 시간</div>
-                    <div id="estimatedTime" style="font-size: 14px; font-weight: bold; color: #667eea;">계산 중...</div>
-                </div>
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">현재 단계</div>
-                    <div id="currentStep" style="font-size: 14px; font-weight: bold; color: #667eea;">준비 중...</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 변환 버튼 -->
-        <button class="convert-btn" id="convertBtn" disabled onclick="convertToExcel()">
-            🔄 Excel로 변환 및 다운로드
-        </button>
-        
-        <!-- 다운로드 섹션 -->
-        <div class="download-section" id="downloadSection" style="display: none;">
-            <div style="text-align: center; padding: 20px; background: #d4edda; border-radius: 10px; margin-top: 20px;">
-                <h3 style="color: #155724; margin: 0 0 10px 0;">✅ 변환 완료!</h3>
-                <p style="color: #155724; margin: 0 0 15px 0;">Excel 파일이 성공적으로 생성되었습니다.</p>
-                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                    <button class="btn btn-primary" onclick="downloadAgain()">
-                        📥 다시 다운로드
-                    </button>
-                    <button class="btn btn-success" onclick="forceDownload()">
-                        💾 강제 다운로드
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 미리보기 -->
-        <div class="preview" id="preview">
-            <h3>📋 변환 미리보기</h3>
-            <div id="previewContent"></div>
-        </div>
+      </div>
+
+      <!-- 미리보기 -->
+      <div class="preview" id="preview">
+        <h3>📋 변환 미리보기</h3>
+        <div id="previewContent"></div>
+      </div>
     </div>
 
     <script>
-        // 향상된 PriceParser 클래스
-        class PriceParser {
-            constructor() {
-                this.defaultMarginRate = 0.4;
+      // 향상된 PriceParser 클래스
+      class PriceParser {
+        constructor() {
+          this.defaultMarginRate = 0.4;
+        }
+
+        extractPriceFromContent(content) {
+          const priceMatch = content.match(/(\d+\.\d+)$/);
+          if (priceMatch) {
+            return parseFloat(priceMatch[1]);
+          }
+          return null;
+        }
+
+        convertToWon(price) {
+          return Math.round(price * 10000);
+        }
+
+        calculateSellingPrice(costPrice, marginRate = this.defaultMarginRate) {
+          return Math.round(costPrice * (1 + marginRate));
+        }
+
+        getByteLength(str) {
+          let byteLength = 0;
+          for (let i = 0; i < str.length; i++) {
+            const char = str.charAt(i);
+            if (char.match(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/)) {
+              byteLength += 3;
+            } else {
+              byteLength += 1;
+            }
+          }
+          return byteLength;
+        }
+
+        limitStringByBytes(str, maxBytes) {
+          if (!str) return "";
+
+          let result = "";
+          let byteLength = 0;
+
+          for (let i = 0; i < str.length; i++) {
+            const char = str.charAt(i);
+            const charBytes = char.match(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/) ? 3 : 1;
+
+            if (byteLength + charBytes > maxBytes) {
+              break;
             }
 
-            extractPriceFromContent(content) {
-                const priceMatch = content.match(/(\d+\.\d+)$/);
-                if (priceMatch) {
-                    return parseFloat(priceMatch[1]);
+            result += char;
+            byteLength += charBytes;
+          }
+
+          return result;
+        }
+
+        extractProductName(content) {
+          if (!content) return "";
+
+          const textOnly = content.replace(/<[^>]*>/g, "");
+          const lines = textOnly.split("\n");
+          let productName = lines[0] || "";
+
+          const exclamationIndex = productName.indexOf("!!");
+          if (exclamationIndex !== -1) {
+            productName = productName.substring(0, exclamationIndex);
+          }
+
+          productName = productName.replace(/\d+\.\d+$/, "").trim();
+          return productName;
+        }
+
+        removeImagesFromText(content) {
+          if (!content) return "";
+          return content
+            .replace(/<img[^>]*>/g, "")
+            .replace(/\d+\.\d+$/, "")
+            .trim();
+        }
+
+        extractImageUrls(content) {
+          if (!content) return [];
+          const imageUrls = [];
+          const imgRegex = /src="([^"]+)"/g;
+          let match;
+          while ((match = imgRegex.exec(content)) !== null) {
+            imageUrls.push(match[1]);
+          }
+          return imageUrls;
+        }
+
+        removePrice(content) {
+          if (!content) return "";
+          return content.replace(/\d+\.\d+$/, "").trim();
+        }
+
+        async convertToExcelFormat(
+          jsonData,
+          marginRate = this.defaultMarginRate,
+          useGpt = false,
+          onProgress = null
+        ) {
+          const headers = [
+            "상품코드",
+            "기본분류",
+            "분류2",
+            "분류3",
+            "상품명",
+            "제조사",
+            "원산지",
+            "브랜드",
+            "모델",
+            "상품유형1",
+            "상품유형2",
+            "상품유형3",
+            "상품유형4",
+            "상품유형5",
+            "기본설명",
+            "상품설명",
+            "모바일상품설명",
+            "시중가격",
+            "판매가격",
+            "전화문의",
+            "포인트",
+            "포인트타입",
+            "판매자이메일",
+            "판매가능",
+            "재고수량",
+            "재고통보수량",
+            "최소구매수량",
+            "최대구매수량",
+            "과세유형",
+            "정렬순서",
+            "이미지1",
+            "이미지2",
+            "이미지3",
+            "이미지4",
+            "이미지5",
+            "이미지6",
+            "이미지7",
+            "이미지8",
+            "이미지9",
+            "이미지10",
+          ];
+
+          const excelData = [headers];
+
+          for (let index = 0; index < jsonData.length; index++) {
+            const item = jsonData[index];
+
+            if (onProgress) {
+              onProgress(index + 1, jsonData.length);
+            }
+
+            // 가격 정보 추출
+            const rawPrice = this.extractPriceFromContent(item.content || "");
+            const costPrice = rawPrice ? this.convertToWon(rawPrice) : 0;
+            const sellingPrice = rawPrice
+              ? this.calculateSellingPrice(costPrice, marginRate)
+              : 0;
+
+            // 상품명 추출 및 50바이트 제한
+            const fullProductName = this.extractProductName(item.content || "");
+            let productName = this.limitStringByBytes(fullProductName, 50);
+
+            // GPT로 상품명 개선
+            if (useGpt && fullProductName) {
+              try {
+                const enhancedName = await this.enhanceProductNameWithGPT(
+                  fullProductName
+                );
+                if (enhancedName) {
+                  productName = this.limitStringByBytes(enhancedName, 50);
                 }
-                return null;
+              } catch (error) {
+                console.warn(
+                  `상품 ${index + 1} 상품명 GPT 처리 실패:`,
+                  error.message
+                );
+              }
             }
 
-            convertToWon(price) {
-                return Math.round(price * 10000);
+            // 기본설명: 이미지 링크 삭제, 가격 제거
+            const basicDescription = this.removeImagesFromText(
+              item.content || ""
+            );
+
+            // 이미지 URL 추출 및 처리
+            const originalImageUrls = this.extractImageUrls(
+              item.content || ""
+            ).slice(0, 10);
+            let imageUrls = [];
+
+            if (skipImageUpload) {
+              // 이미지 업로드 제외 모드: 서버에서 파일명으로 검색
+              imageUrls = await this.processImagesFromServer(
+                originalImageUrls,
+                onProgress,
+                index,
+                jsonData.length
+              );
+            } else {
+              // 일반 모드: 이미지 업로드 (기존 로직 유지)
+              imageUrls = originalImageUrls;
             }
 
-            calculateSellingPrice(costPrice, marginRate = this.defaultMarginRate) {
-                return Math.round(costPrice * (1 + marginRate));
-            }
+            // 상품설명과 모바일상품설명: 이미지 포함, 가격 제거
+            let productDescription = this.removePrice(item.content || "");
+            let mobileDescription = this.removePrice(item.content || "");
 
-            getByteLength(str) {
-                let byteLength = 0;
-                for (let i = 0; i < str.length; i++) {
-                    const char = str.charAt(i);
-                    if (char.match(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/)) {
-                        byteLength += 3;
-                    } else {
-                        byteLength += 1;
-                    }
+            // GPT로 상품설명 개선
+            if (useGpt && productDescription) {
+              try {
+                const enhancedDescription =
+                  await this.enhanceDescriptionWithGPT(productDescription);
+                if (enhancedDescription) {
+                  productDescription = enhancedDescription;
+                  mobileDescription = enhancedDescription;
                 }
-                return byteLength;
+              } catch (error) {
+                console.warn(`상품 ${index + 1} GPT 처리 실패:`, error.message);
+                // GPT 실패 시 원본 텍스트 유지하고 계속 진행
+              }
             }
 
-            limitStringByBytes(str, maxBytes) {
-                if (!str) return '';
-                
-                let result = '';
-                let byteLength = 0;
-                
-                for (let i = 0; i < str.length; i++) {
-                    const char = str.charAt(i);
-                    const charBytes = char.match(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/) ? 3 : 1;
-                    
-                    if (byteLength + charBytes > maxBytes) {
-                        break;
-                    }
-                    
-                    result += char;
-                    byteLength += charBytes;
-                }
-                
-                return result;
+            const rowData = [
+              `PRODUCT_${String(index + 1).padStart(4, "0")}`,
+              "10",
+              "",
+              "",
+              productName,
+              "",
+              "국내",
+              "",
+              "",
+              "0",
+              "0",
+              "0",
+              "0",
+              "0",
+              basicDescription, // 기본설명: 이미지 링크 삭제, 가격 제거
+              productDescription, // 상품설명: 이미지 포함, 가격 제거, GPT 개선
+              mobileDescription, // 모바일상품설명: 이미지 포함, 가격 제거, GPT 개선
+              costPrice, // 시중가격: 원가
+              sellingPrice, // 판매가격: 40% 마진
+              "0",
+              "",
+              "1",
+              "",
+              "1",
+              "999",
+              "0",
+              "1",
+              "10",
+              "0",
+              index + 1,
+              ...imageUrls,
+              ...Array(10 - imageUrls.length).fill(""),
+            ];
+
+            excelData.push(rowData);
+          }
+
+          return excelData;
+        }
+
+        async enhanceDescriptionWithGPT(description) {
+          const apiKey = localStorage.getItem("gptApiKey");
+          const prompt =
+            localStorage.getItem("gptPrompt") || this.getDefaultPrompt();
+
+          if (!apiKey) {
+            throw new Error("API Key가 설정되지 않았습니다.");
+          }
+
+          // CORS 프록시 사용 (여러 개의 프록시 URL 시도)
+          const proxyUrls = [
+            "https://cors-anywhere.herokuapp.com/",
+            "https://api.allorigins.win/raw?url=",
+            "https://corsproxy.io/?",
+          ];
+
+          const apiUrl = "https://api.openai.com/v1/chat/completions";
+
+          for (const proxyUrl of proxyUrls) {
+            try {
+              const response = await fetch(proxyUrl + apiUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${apiKey}`,
+                  "X-Requested-With": "XMLHttpRequest",
+                },
+                body: JSON.stringify({
+                  model: "gpt-3.5-turbo",
+                  messages: [
+                    {
+                      role: "system",
+                      content: prompt,
+                    },
+                    {
+                      role: "user",
+                      content: description,
+                    },
+                  ],
+                  max_tokens: 1000,
+                  temperature: 0.7,
+                }),
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                return data.choices[0].message.content;
+              }
+            } catch (error) {
+              console.warn(`프록시 ${proxyUrl} 실패:`, error);
+              continue;
             }
+          }
 
-            extractProductName(content) {
-                if (!content) return '';
-                
-                const textOnly = content.replace(/<[^>]*>/g, '');
-                const lines = textOnly.split('\n');
-                let productName = lines[0] || '';
-                
-                const exclamationIndex = productName.indexOf('!!');
-                if (exclamationIndex !== -1) {
-                    productName = productName.substring(0, exclamationIndex);
-                }
-                
-                productName = productName.replace(/\d+\.\d+$/, '').trim();
-                return productName;
+          // 모든 프록시 실패 시 직접 호출 시도
+          try {
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: [
+                  {
+                    role: "system",
+                    content: prompt,
+                  },
+                  {
+                    role: "user",
+                    content: description,
+                  },
+                ],
+                max_tokens: 1000,
+                temperature: 0.7,
+              }),
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              return data.choices[0].message.content;
+            } else {
+              throw new Error(`GPT API 오류: ${response.status}`);
             }
+          } catch (error) {
+            throw new Error(
+              `GPT API 연결 실패: ${error.message}. CORS 프록시를 사용하거나 브라우저 확장 프로그램을 설치해주세요.`
+            );
+          }
+        }
 
-            removeImagesFromText(content) {
-                if (!content) return '';
-                return content.replace(/<img[^>]*>/g, '').replace(/\d+\.\d+$/, '').trim();
-            }
+        async enhanceProductNameWithGPT(productName) {
+          const apiKey = localStorage.getItem("gptApiKey");
 
-            extractImageUrls(content) {
-                if (!content) return [];
-                const imageUrls = [];
-                const imgRegex = /src="([^"]+)"/g;
-                let match;
-                while ((match = imgRegex.exec(content)) !== null) {
-                    imageUrls.push(match[1]);
-                }
-                return imageUrls;
-            }
+          if (!apiKey) {
+            throw new Error("API Key가 설정되지 않았습니다.");
+          }
 
-            removePrice(content) {
-                if (!content) return '';
-                return content.replace(/\d+\.\d+$/, '').trim();
-            }
-
-            async convertToExcelFormat(jsonData, marginRate = this.defaultMarginRate, useGpt = false, onProgress = null) {
-                const headers = [
-                    '상품코드', '기본분류', '분류2', '분류3', '상품명', '제조사', '원산지', '브랜드', '모델',
-                    '상품유형1', '상품유형2', '상품유형3', '상품유형4', '상품유형5', '기본설명', '상품설명', 
-                    '모바일상품설명', '시중가격', '판매가격', '전화문의', '포인트', '포인트타입', '판매자이메일',
-                    '판매가능', '재고수량', '재고통보수량', '최소구매수량', '최대구매수량', '과세유형', '정렬순서',
-                    '이미지1', '이미지2', '이미지3', '이미지4', '이미지5', '이미지6', '이미지7', '이미지8', '이미지9', '이미지10'
-                ];
-
-                const excelData = [headers];
-
-                for (let index = 0; index < jsonData.length; index++) {
-                    const item = jsonData[index];
-                    
-                    if (onProgress) {
-                        onProgress(index + 1, jsonData.length);
-                    }
-
-                    // 가격 정보 추출
-                    const rawPrice = this.extractPriceFromContent(item.content || '');
-                    const costPrice = rawPrice ? this.convertToWon(rawPrice) : 0;
-                    const sellingPrice = rawPrice ? this.calculateSellingPrice(costPrice, marginRate) : 0;
-
-                    // 상품명 추출 및 50바이트 제한
-                    const fullProductName = this.extractProductName(item.content || '');
-                    let productName = this.limitStringByBytes(fullProductName, 50);
-                    
-                    // GPT로 상품명 개선
-                    if (useGpt && fullProductName) {
-                        try {
-                            const enhancedName = await this.enhanceProductNameWithGPT(fullProductName);
-                            if (enhancedName) {
-                                productName = this.limitStringByBytes(enhancedName, 50);
-                            }
-                        } catch (error) {
-                            console.warn(`상품 ${index + 1} 상품명 GPT 처리 실패:`, error.message);
-                        }
-                    }
-
-                    // 기본설명: 이미지 링크 삭제, 가격 제거
-                    const basicDescription = this.removeImagesFromText(item.content || '');
-
-                    // 이미지 URL 추출
-                    const imageUrls = this.extractImageUrls(item.content || '').slice(0, 10);
-
-                    // 상품설명과 모바일상품설명: 이미지 포함, 가격 제거
-                    let productDescription = this.removePrice(item.content || '');
-                    let mobileDescription = this.removePrice(item.content || '');
-
-                    // GPT로 상품설명 개선
-                    if (useGpt && productDescription) {
-                        try {
-                            const enhancedDescription = await this.enhanceDescriptionWithGPT(productDescription);
-                            if (enhancedDescription) {
-                                productDescription = enhancedDescription;
-                                mobileDescription = enhancedDescription;
-                            }
-                        } catch (error) {
-                            console.warn(`상품 ${index + 1} GPT 처리 실패:`, error.message);
-                            // GPT 실패 시 원본 텍스트 유지하고 계속 진행
-                        }
-                    }
-
-                    const rowData = [
-                        `PRODUCT_${String(index + 1).padStart(4, '0')}`,
-                        '10',
-                        '', '', 
-                        productName,
-                        '', '국내', '', '',
-                        '0', '0', '0', '0', '0',
-                        basicDescription,        // 기본설명: 이미지 링크 삭제, 가격 제거
-                        productDescription,      // 상품설명: 이미지 포함, 가격 제거, GPT 개선
-                        mobileDescription,       // 모바일상품설명: 이미지 포함, 가격 제거, GPT 개선
-                        costPrice,              // 시중가격: 원가
-                        sellingPrice,           // 판매가격: 40% 마진
-                        '0', '', '1', '',
-                        '1', '999', '0', '1', '10', '0',
-                        index + 1,
-                        ...imageUrls,
-                        ...Array(10 - imageUrls.length).fill('')
-                    ];
-
-                    excelData.push(rowData);
-                }
-
-                return excelData;
-            }
-
-            async enhanceDescriptionWithGPT(description) {
-                const apiKey = localStorage.getItem('gptApiKey');
-                const prompt = localStorage.getItem('gptPrompt') || this.getDefaultPrompt();
-                
-                if (!apiKey) {
-                    throw new Error('API Key가 설정되지 않았습니다.');
-                }
-
-                // CORS 프록시 사용 (여러 개의 프록시 URL 시도)
-                const proxyUrls = [
-                    'https://cors-anywhere.herokuapp.com/',
-                    'https://api.allorigins.win/raw?url=',
-                    'https://corsproxy.io/?'
-                ];
-
-                const apiUrl = 'https://api.openai.com/v1/chat/completions';
-                
-                for (const proxyUrl of proxyUrls) {
-                    try {
-                        const response = await fetch(proxyUrl + apiUrl, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${apiKey}`,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({
-                                model: 'gpt-3.5-turbo',
-                                messages: [
-                                    {
-                                        role: 'system',
-                                        content: prompt
-                                    },
-                                    {
-                                        role: 'user',
-                                        content: description
-                                    }
-                                ],
-                                max_tokens: 1000,
-                                temperature: 0.7
-                            })
-                        });
-
-                        if (response.ok) {
-                            const data = await response.json();
-                            return data.choices[0].message.content;
-                        }
-                    } catch (error) {
-                        console.warn(`프록시 ${proxyUrl} 실패:`, error);
-                        continue;
-                    }
-                }
-
-                // 모든 프록시 실패 시 직접 호출 시도
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`
-                        },
-                        body: JSON.stringify({
-                            model: 'gpt-3.5-turbo',
-                            messages: [
-                                {
-                                    role: 'system',
-                                    content: prompt
-                                },
-                                {
-                                    role: 'user',
-                                    content: description
-                                }
-                            ],
-                            max_tokens: 1000,
-                            temperature: 0.7
-                        })
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        return data.choices[0].message.content;
-                    } else {
-                        throw new Error(`GPT API 오류: ${response.status}`);
-                    }
-                } catch (error) {
-                    throw new Error(`GPT API 연결 실패: ${error.message}. CORS 프록시를 사용하거나 브라우저 확장 프로그램을 설치해주세요.`);
-                }
-            }
-
-            async enhanceProductNameWithGPT(productName) {
-                const apiKey = localStorage.getItem('gptApiKey');
-                
-                if (!apiKey) {
-                    throw new Error('API Key가 설정되지 않았습니다.');
-                }
-
-                const namePrompt = `당신은 전문적인 상품명 작성자입니다. 주어진 상품명을 다음과 같이 개선해주세요:
+          const namePrompt = `당신은 전문적인 상품명 작성자입니다. 주어진 상품명을 다음과 같이 개선해주세요:
 
 1. 고객의 눈길을 끄는 매력적인 상품명으로 변경
 2. 핵심 키워드는 유지하면서 더 판매력 있게 표현
@@ -735,232 +966,245 @@
 
 개선된 상품명만 답변해주세요:`;
 
-                // CORS 프록시 사용
-                const proxyUrls = [
-                    'https://cors-anywhere.herokuapp.com/',
-                    'https://api.allorigins.win/raw?url=',
-                    'https://corsproxy.io/?'
-                ];
+          // CORS 프록시 사용
+          const proxyUrls = [
+            "https://cors-anywhere.herokuapp.com/",
+            "https://api.allorigins.win/raw?url=",
+            "https://corsproxy.io/?",
+          ];
 
-                const apiUrl = 'https://api.openai.com/v1/chat/completions';
-                
-                for (const proxyUrl of proxyUrls) {
-                    try {
-                        const response = await fetch(proxyUrl + apiUrl, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${apiKey}`,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify({
-                                model: 'gpt-3.5-turbo',
-                                messages: [
-                                    {
-                                        role: 'user',
-                                        content: namePrompt
-                                    }
-                                ],
-                                max_tokens: 100,
-                                temperature: 0.7
-                            })
-                        });
+          const apiUrl = "https://api.openai.com/v1/chat/completions";
 
-                        if (response.ok) {
-                            const data = await response.json();
-                            return data.choices[0].message.content.trim();
-                        }
-                    } catch (error) {
-                        console.warn(`프록시 ${proxyUrl} 실패:`, error);
-                        continue;
-                    }
-                }
-
-                // 모든 프록시 실패 시 직접 호출 시도
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`
-                        },
-                        body: JSON.stringify({
-                            model: 'gpt-3.5-turbo',
-                            messages: [
-                                {
-                                    role: 'user',
-                                    content: namePrompt
-                                }
-                            ],
-                            max_tokens: 100,
-                            temperature: 0.7
-                        })
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        return data.choices[0].message.content.trim();
-                    } else {
-                        throw new Error(`GPT API 오류: ${response.status}`);
-                    }
-                } catch (error) {
-                    throw new Error(`GPT API 연결 실패: ${error.message}`);
-                }
-            }
-        }
-
-        // 전역 변수
-        let jsonData = null;
-        let lastExcelData = null;
-        let lastFilename = null;
-        let processingStartTime = null;
-        let lastProgressUpdate = null;
-        const priceParser = new PriceParser();
-
-        // 초기화
-        document.addEventListener('DOMContentLoaded', function() {
-            loadSavedSettings();
-            setupEventListeners();
-        });
-
-        function loadSavedSettings() {
-            const savedApiKey = localStorage.getItem('gptApiKey');
-            const savedPrompt = localStorage.getItem('gptPrompt');
-            
-            if (savedApiKey) {
-                document.getElementById('apiKey').value = savedApiKey;
-                document.getElementById('apiKeySaved').style.display = 'block';
-            }
-            
-            if (savedPrompt) {
-                document.getElementById('gptPrompt').value = savedPrompt;
-                document.getElementById('promptSaved').style.display = 'block';
-            } else {
-                document.getElementById('gptPrompt').value = priceParser.getDefaultPrompt();
-            }
-        }
-
-        function setupEventListeners() {
-            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-            
-            const uploadArea = document.getElementById('uploadArea');
-            uploadArea.addEventListener('dragover', handleDragOver);
-            uploadArea.addEventListener('dragleave', handleDragLeave);
-            uploadArea.addEventListener('drop', handleDrop);
-            
-            // 이익률 변경 시 미리보기 업데이트
-            document.getElementById('marginRate').addEventListener('input', async function() {
-                if (jsonData) {
-                    await showPreview(jsonData.slice(0, 3));
-                }
-            });
-            
-            // GPT 사용 여부 변경 시 미리보기 업데이트
-            document.getElementById('useGpt').addEventListener('change', async function() {
-                if (jsonData) {
-                    await showPreview(jsonData.slice(0, 3));
-                }
-            });
-            
-            // 이미지 업로드 제외 체크박스 변경 시 안내 메시지 업데이트
-            document.getElementById('skipImageUpload').addEventListener('change', function() {
-                checkImageCacheStatus();
-            });
-            
-            // 페이지 로드 시 이미지 캐시 상태 확인
-            checkImageCacheStatus();
-        }
-
-        function saveApiKey() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            if (apiKey) {
-                localStorage.setItem('gptApiKey', apiKey);
-                document.getElementById('apiKeySaved').style.display = 'block';
-                showAlert('✅ API Key가 저장되었습니다.', 'success');
-            } else {
-                showAlert('❌ API Key를 입력해주세요.', 'error');
-            }
-        }
-
-        function savePrompt() {
-            const prompt = document.getElementById('gptPrompt').value.trim();
-            if (prompt) {
-                localStorage.setItem('gptPrompt', prompt);
-                document.getElementById('promptSaved').style.display = 'block';
-                showAlert('✅ 프롬프트가 저장되었습니다.', 'success');
-            } else {
-                showAlert('❌ 프롬프트를 입력해주세요.', 'error');
-            }
-        }
-
-        function loadDefaultPrompt() {
-            document.getElementById('gptPrompt').value = priceParser.getDefaultPrompt();
-            showAlert('✅ 기본 프롬프트가 로드되었습니다.', 'info');
-        }
-
-        async function testApiKey() {
-            const apiKey = document.getElementById('apiKey').value.trim();
-            if (!apiKey) {
-                showAlert('❌ API Key를 입력해주세요.', 'error');
-                return;
-            }
-
+          for (const proxyUrl of proxyUrls) {
             try {
-                showAlert('🔄 API Key 테스트 중...', 'info');
-                
-                // 여러 프록시 시도
-                const proxyUrls = [
-                    'https://cors-anywhere.herokuapp.com/',
-                    'https://api.allorigins.win/raw?url=',
-                    'https://corsproxy.io/?'
-                ];
+              const response = await fetch(proxyUrl + apiUrl, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${apiKey}`,
+                  "X-Requested-With": "XMLHttpRequest",
+                },
+                body: JSON.stringify({
+                  model: "gpt-3.5-turbo",
+                  messages: [
+                    {
+                      role: "user",
+                      content: namePrompt,
+                    },
+                  ],
+                  max_tokens: 100,
+                  temperature: 0.7,
+                }),
+              });
 
-                const apiUrl = 'https://api.openai.com/v1/models';
-                
-                for (const proxyUrl of proxyUrls) {
-                    try {
-                        const response = await fetch(proxyUrl + apiUrl, {
-                            headers: {
-                                'Authorization': `Bearer ${apiKey}`,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        });
-
-                        if (response.ok) {
-                            showAlert('✅ API Key가 유효합니다!', 'success');
-                            return;
-                        }
-                    } catch (error) {
-                        console.warn(`프록시 ${proxyUrl} 실패:`, error);
-                        continue;
-                    }
-                }
-
-                // 직접 호출 시도
-                try {
-                    const response = await fetch(apiUrl, {
-                        headers: {
-                            'Authorization': `Bearer ${apiKey}`
-                        }
-                    });
-
-                    if (response.ok) {
-                        showAlert('✅ API Key가 유효합니다!', 'success');
-                    } else {
-                        showAlert('❌ API Key가 유효하지 않습니다.', 'error');
-                    }
-                } catch (error) {
-                    showAlert('❌ CORS 오류가 발생했습니다. 아래 해결 방법을 참고하세요.', 'error');
-                    showCorsHelp();
-                }
+              if (response.ok) {
+                const data = await response.json();
+                return data.choices[0].message.content.trim();
+              }
             } catch (error) {
-                showAlert('❌ API Key 테스트 중 오류가 발생했습니다.', 'error');
-                showCorsHelp();
+              console.warn(`프록시 ${proxyUrl} 실패:`, error);
+              continue;
             }
+          }
+
+          // 모든 프록시 실패 시 직접 호출 시도
+          try {
+            const response = await fetch(apiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`,
+              },
+              body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: [
+                  {
+                    role: "user",
+                    content: namePrompt,
+                  },
+                ],
+                max_tokens: 100,
+                temperature: 0.7,
+              }),
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              return data.choices[0].message.content.trim();
+            } else {
+              throw new Error(`GPT API 오류: ${response.status}`);
+            }
+          } catch (error) {
+            throw new Error(`GPT API 연결 실패: ${error.message}`);
+          }
+        }
+      }
+
+      // 전역 변수
+      let jsonData = null;
+      let lastExcelData = null;
+      let lastFilename = null;
+      let processingStartTime = null;
+      let lastProgressUpdate = null;
+      const priceParser = new PriceParser();
+
+      // 초기화
+      document.addEventListener("DOMContentLoaded", function () {
+        loadSavedSettings();
+        setupEventListeners();
+      });
+
+      function loadSavedSettings() {
+        const savedApiKey = localStorage.getItem("gptApiKey");
+        const savedPrompt = localStorage.getItem("gptPrompt");
+
+        if (savedApiKey) {
+          document.getElementById("apiKey").value = savedApiKey;
+          document.getElementById("apiKeySaved").style.display = "block";
         }
 
-        function showCorsHelp() {
-            const helpMessage = `
+        if (savedPrompt) {
+          document.getElementById("gptPrompt").value = savedPrompt;
+          document.getElementById("promptSaved").style.display = "block";
+        } else {
+          document.getElementById("gptPrompt").value =
+            priceParser.getDefaultPrompt();
+        }
+      }
+
+      function setupEventListeners() {
+        document
+          .getElementById("fileInput")
+          .addEventListener("change", handleFileSelect);
+
+        const uploadArea = document.getElementById("uploadArea");
+        uploadArea.addEventListener("dragover", handleDragOver);
+        uploadArea.addEventListener("dragleave", handleDragLeave);
+        uploadArea.addEventListener("drop", handleDrop);
+
+        // 이익률 변경 시 미리보기 업데이트
+        document
+          .getElementById("marginRate")
+          .addEventListener("input", async function () {
+            if (jsonData) {
+              await showPreview(jsonData.slice(0, 3));
+            }
+          });
+
+        // GPT 사용 여부 변경 시 미리보기 업데이트
+        document
+          .getElementById("useGpt")
+          .addEventListener("change", async function () {
+            if (jsonData) {
+              await showPreview(jsonData.slice(0, 3));
+            }
+          });
+
+        // 이미지 업로드 제외 체크박스 변경 시 안내 메시지 업데이트
+        document
+          .getElementById("skipImageUpload")
+          .addEventListener("change", function () {
+            checkImageCacheStatus();
+          });
+
+        // 페이지 로드 시 이미지 캐시 상태 확인
+        checkImageCacheStatus();
+      }
+
+      function saveApiKey() {
+        const apiKey = document.getElementById("apiKey").value.trim();
+        if (apiKey) {
+          localStorage.setItem("gptApiKey", apiKey);
+          document.getElementById("apiKeySaved").style.display = "block";
+          showAlert("✅ API Key가 저장되었습니다.", "success");
+        } else {
+          showAlert("❌ API Key를 입력해주세요.", "error");
+        }
+      }
+
+      function savePrompt() {
+        const prompt = document.getElementById("gptPrompt").value.trim();
+        if (prompt) {
+          localStorage.setItem("gptPrompt", prompt);
+          document.getElementById("promptSaved").style.display = "block";
+          showAlert("✅ 프롬프트가 저장되었습니다.", "success");
+        } else {
+          showAlert("❌ 프롬프트를 입력해주세요.", "error");
+        }
+      }
+
+      function loadDefaultPrompt() {
+        document.getElementById("gptPrompt").value =
+          priceParser.getDefaultPrompt();
+        showAlert("✅ 기본 프롬프트가 로드되었습니다.", "info");
+      }
+
+      async function testApiKey() {
+        const apiKey = document.getElementById("apiKey").value.trim();
+        if (!apiKey) {
+          showAlert("❌ API Key를 입력해주세요.", "error");
+          return;
+        }
+
+        try {
+          showAlert("🔄 API Key 테스트 중...", "info");
+
+          // 여러 프록시 시도
+          const proxyUrls = [
+            "https://cors-anywhere.herokuapp.com/",
+            "https://api.allorigins.win/raw?url=",
+            "https://corsproxy.io/?",
+          ];
+
+          const apiUrl = "https://api.openai.com/v1/models";
+
+          for (const proxyUrl of proxyUrls) {
+            try {
+              const response = await fetch(proxyUrl + apiUrl, {
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  "X-Requested-With": "XMLHttpRequest",
+                },
+              });
+
+              if (response.ok) {
+                showAlert("✅ API Key가 유효합니다!", "success");
+                return;
+              }
+            } catch (error) {
+              console.warn(`프록시 ${proxyUrl} 실패:`, error);
+              continue;
+            }
+          }
+
+          // 직접 호출 시도
+          try {
+            const response = await fetch(apiUrl, {
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+              },
+            });
+
+            if (response.ok) {
+              showAlert("✅ API Key가 유효합니다!", "success");
+            } else {
+              showAlert("❌ API Key가 유효하지 않습니다.", "error");
+            }
+          } catch (error) {
+            showAlert(
+              "❌ CORS 오류가 발생했습니다. 아래 해결 방법을 참고하세요.",
+              "error"
+            );
+            showCorsHelp();
+          }
+        } catch (error) {
+          showAlert("❌ API Key 테스트 중 오류가 발생했습니다.", "error");
+          showCorsHelp();
+        }
+      }
+
+      function showCorsHelp() {
+        const helpMessage = `
                 <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin-top: 10px;">
                     <h4 style="color: #856404; margin-top: 0;">🔧 CORS 문제 해결 방법</h4>
                     <p style="margin: 10px 0; color: #856404;">
@@ -976,87 +1220,91 @@
                     </p>
                 </div>
             `;
-            
-            const alertDiv = document.getElementById('alert');
-            alertDiv.innerHTML = helpMessage;
-            alertDiv.className = 'alert info';
-            alertDiv.style.display = 'block';
+
+        const alertDiv = document.getElementById("alert");
+        alertDiv.innerHTML = helpMessage;
+        alertDiv.className = "alert info";
+        alertDiv.style.display = "block";
+      }
+
+      function handleDragOver(e) {
+        e.preventDefault();
+        document.getElementById("uploadArea").classList.add("dragover");
+      }
+
+      function handleDragLeave(e) {
+        e.preventDefault();
+        document.getElementById("uploadArea").classList.remove("dragover");
+      }
+
+      function handleDrop(e) {
+        e.preventDefault();
+        document.getElementById("uploadArea").classList.remove("dragover");
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          handleFile(files[0]);
+        }
+      }
+
+      function handleFileSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+          handleFile(file);
+        }
+      }
+
+      function handleFile(file) {
+        if (!file.name.endsWith(".json")) {
+          showAlert("JSON 파일만 업로드 가능합니다.", "error");
+          return;
         }
 
-        function handleDragOver(e) {
-            e.preventDefault();
-            document.getElementById('uploadArea').classList.add('dragover');
+        const reader = new FileReader();
+        reader.onload = async function (e) {
+          try {
+            jsonData = JSON.parse(e.target.result);
+            showAlert(
+              `✅ ${file.name} 파일이 성공적으로 로드되었습니다. (${jsonData.length}개 상품)`,
+              "success"
+            );
+            document.getElementById("convertBtn").disabled = false;
+            await showPreview(jsonData.slice(0, 3));
+          } catch (error) {
+            showAlert("❌ JSON 파일 형식이 올바르지 않습니다.", "error");
+            console.error("JSON 파싱 오류:", error);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      function showAlert(message, type) {
+        const alert = document.getElementById("alert");
+        // 줄바꿈 문자를 <br> 태그로 변환
+        const formattedMessage = message.replace(/\n/g, "<br>");
+        alert.innerHTML = formattedMessage;
+        alert.className = `alert ${type}`;
+        alert.style.display = "block";
+
+        if (type === "success" || type === "info") {
+          setTimeout(() => {
+            alert.style.display = "none";
+          }, 8000); // 성공 메시지는 8초 후 자동 숨김
         }
+      }
 
-        function handleDragLeave(e) {
-            e.preventDefault();
-            document.getElementById('uploadArea').classList.remove('dragover');
-        }
+      async function showPreview(data) {
+        const preview = document.getElementById("preview");
+        const content = document.getElementById("previewContent");
+        const marginRate =
+          parseFloat(document.getElementById("marginRate").value) / 100;
+        const useGpt = document.getElementById("useGpt").checked;
 
-        function handleDrop(e) {
-            e.preventDefault();
-            document.getElementById('uploadArea').classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        }
+        content.innerHTML = "";
 
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (file) {
-                handleFile(file);
-            }
-        }
-
-        function handleFile(file) {
-            if (!file.name.endsWith('.json')) {
-                showAlert('JSON 파일만 업로드 가능합니다.', 'error');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    jsonData = JSON.parse(e.target.result);
-                    showAlert(`✅ ${file.name} 파일이 성공적으로 로드되었습니다. (${jsonData.length}개 상품)`, 'success');
-                    document.getElementById('convertBtn').disabled = false;
-                    await showPreview(jsonData.slice(0, 3));
-                } catch (error) {
-                    showAlert('❌ JSON 파일 형식이 올바르지 않습니다.', 'error');
-                    console.error('JSON 파싱 오류:', error);
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function showAlert(message, type) {
-            const alert = document.getElementById('alert');
-            // 줄바꿈 문자를 <br> 태그로 변환
-            const formattedMessage = message.replace(/\n/g, '<br>');
-            alert.innerHTML = formattedMessage;
-            alert.className = `alert ${type}`;
-            alert.style.display = 'block';
-            
-            if (type === 'success' || type === 'info') {
-                setTimeout(() => {
-                    alert.style.display = 'none';
-                }, 8000); // 성공 메시지는 8초 후 자동 숨김
-            }
-        }
-
-        async function showPreview(data) {
-            const preview = document.getElementById('preview');
-            const content = document.getElementById('previewContent');
-            const marginRate = parseFloat(document.getElementById('marginRate').value) / 100;
-            const useGpt = document.getElementById('useGpt').checked;
-            
-            content.innerHTML = '';
-            
-            // 미리보기 로딩 표시
-            if (useGpt) {
-                const loadingDiv = document.createElement('div');
-                loadingDiv.innerHTML = `
+        // 미리보기 로딩 표시
+        if (useGpt) {
+          const loadingDiv = document.createElement("div");
+          loadingDiv.innerHTML = `
                     <div style="text-align: center; padding: 30px; background: #f8f9ff; border-radius: 10px; border: 2px dashed #667eea;">
                         <div style="display: inline-block; width: 30px; height: 30px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px;"></div>
                         <h4 style="color: #667eea; margin: 0 0 10px 0;">🤖 GPT로 상품명 개선 중...</h4>
@@ -1064,473 +1312,609 @@
                         <p style="color: #999; margin: 5px 0 0 0; font-size: 12px;">이 과정은 약 10-30초 소요될 수 있습니다.</p>
                     </div>
                 `;
-                content.appendChild(loadingDiv);
-                preview.style.display = 'block';
+          content.appendChild(loadingDiv);
+          preview.style.display = "block";
+        }
+
+        for (let index = 0; index < data.length; index++) {
+          const item = data[index];
+
+          const rawPrice = priceParser.extractPriceFromContent(
+            item.content || ""
+          );
+          const costPrice = rawPrice ? priceParser.convertToWon(rawPrice) : 0;
+          const sellingPrice = rawPrice
+            ? priceParser.calculateSellingPrice(costPrice, marginRate)
+            : 0;
+
+          // 원본 상품명
+          const originalProductName = priceParser.extractProductName(
+            item.content || ""
+          );
+          const limitedOriginalName = priceParser.limitStringByBytes(
+            originalProductName,
+            50
+          );
+
+          // GPT 개선된 상품명
+          let enhancedProductName = limitedOriginalName;
+          if (useGpt && originalProductName) {
+            try {
+              const enhanced = await priceParser.enhanceProductNameWithGPT(
+                originalProductName
+              );
+              if (enhanced) {
+                // 50바이트 제한
+                enhancedProductName = priceParser.limitStringByBytes(
+                  enhanced,
+                  50
+                );
+              }
+            } catch (error) {
+              console.warn(
+                `미리보기 GPT 처리 실패 (상품 ${index + 1}):`,
+                error.message
+              );
             }
-            
-            for (let index = 0; index < data.length; index++) {
-                const item = data[index];
-                
-                const rawPrice = priceParser.extractPriceFromContent(item.content || '');
-                const costPrice = rawPrice ? priceParser.convertToWon(rawPrice) : 0;
-                const sellingPrice = rawPrice ? priceParser.calculateSellingPrice(costPrice, marginRate) : 0;
-                
-                // 원본 상품명
-                const originalProductName = priceParser.extractProductName(item.content || '');
-                const limitedOriginalName = priceParser.limitStringByBytes(originalProductName, 50);
-                
-                // GPT 개선된 상품명
-                let enhancedProductName = limitedOriginalName;
-                if (useGpt && originalProductName) {
-                    try {
-                        const enhanced = await priceParser.enhanceProductNameWithGPT(originalProductName);
-                        if (enhanced) {
-                            // 50바이트 제한
-                            enhancedProductName = priceParser.limitStringByBytes(enhanced, 50);
-                        }
-                    } catch (error) {
-                        console.warn(`미리보기 GPT 처리 실패 (상품 ${index + 1}):`, error.message);
-                    }
-                }
-                
-                // 미리보기 아이템 생성
-                const previewItem = document.createElement('div');
-                previewItem.className = 'preview-item';
-                
-                const productNameHtml = useGpt ? `
+          }
+
+          // 미리보기 아이템 생성
+          const previewItem = document.createElement("div");
+          previewItem.className = "preview-item";
+
+          const productNameHtml = useGpt
+            ? `
                     <div style="margin-bottom: 15px;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                             <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #6c757d;">
                                 <div style="display: flex; align-items: center; margin-bottom: 8px;">
                                     <span style="color: #6c757d; font-weight: bold; font-size: 12px;">📝 원본 상품명</span>
-                                    <span style="margin-left: 8px; background: #6c757d; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">${priceParser.getByteLength(limitedOriginalName)}바이트</span>
+                                    <span style="margin-left: 8px; background: #6c757d; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">${priceParser.getByteLength(
+                                      limitedOriginalName
+                                    )}바이트</span>
                                 </div>
-                                <div style="font-size: 14px; line-height: 1.4;">${limitedOriginalName || '상품명 없음'}</div>
+                                <div style="font-size: 14px; line-height: 1.4;">${
+                                  limitedOriginalName || "상품명 없음"
+                                }</div>
                             </div>
                             <div style="background: #e8f5e8; padding: 12px; border-radius: 8px; border-left: 4px solid #28a745;">
                                 <div style="display: flex; align-items: center; margin-bottom: 8px;">
                                     <span style="color: #28a745; font-weight: bold; font-size: 12px;">🤖 GPT 개선 상품명</span>
-                                    <span style="margin-left: 8px; background: #28a745; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">${enhancedProductName ? priceParser.getByteLength(enhancedProductName) : '0'}바이트</span>
+                                    <span style="margin-left: 8px; background: #28a745; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">${
+                                      enhancedProductName
+                                        ? priceParser.getByteLength(
+                                            enhancedProductName
+                                          )
+                                        : "0"
+                                    }바이트</span>
                                 </div>
-                                <div style="font-size: 14px; font-weight: bold; line-height: 1.4;">${enhancedProductName || '처리 중...'}</div>
+                                <div style="font-size: 14px; font-weight: bold; line-height: 1.4;">${
+                                  enhancedProductName || "처리 중..."
+                                }</div>
                             </div>
                         </div>
                     </div>
-                ` : `
+                `
+            : `
                     <div style="margin-bottom: 15px;">
                         <div style="display: flex; align-items: center; margin-bottom: 8px;">
                             <span style="color: #333; font-weight: bold; font-size: 14px;">📝 상품명</span>
-                            <span style="margin-left: 8px; background: #667eea; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">${priceParser.getByteLength(limitedOriginalName)}바이트</span>
+                            <span style="margin-left: 8px; background: #667eea; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">${priceParser.getByteLength(
+                              limitedOriginalName
+                            )}바이트</span>
                         </div>
-                        <div style="font-size: 16px; font-weight: bold; color: #333;">${limitedOriginalName || '상품명 없음'}</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #333;">${
+                          limitedOriginalName || "상품명 없음"
+                        }</div>
                     </div>
                 `;
-                
-                previewItem.innerHTML = `
+
+          previewItem.innerHTML = `
                     ${productNameHtml}
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 10px;">
                         <div style="background: #f0f1ff; padding: 10px; border-radius: 5px; text-align: center;">
                             <small>원시 가격</small>
-                            <strong style="display: block; color: #667eea; font-size: 18px;">${rawPrice || 'N/A'}</strong>
+                            <strong style="display: block; color: #667eea; font-size: 18px;">${
+                              rawPrice || "N/A"
+                            }</strong>
                         </div>
                         <div style="background: #f0f1ff; padding: 10px; border-radius: 5px; text-align: center;">
                             <small>시중가격 (원가)</small>
                             <strong style="display: block; color: #667eea; font-size: 18px;">${costPrice.toLocaleString()}원</strong>
                         </div>
                         <div style="background: #f0f1ff; padding: 10px; border-radius: 5px; text-align: center;">
-                            <small>판매가격 (+${(marginRate*100).toFixed(1)}%)</small>
+                            <small>판매가격 (+${(marginRate * 100).toFixed(
+                              1
+                            )}%)</small>
                             <strong style="display: block; color: #667eea; font-size: 18px;">${sellingPrice.toLocaleString()}원</strong>
                         </div>
                     </div>
                 `;
-                
-                // 로딩 표시 제거 후 아이템 추가
-                if (useGpt && index === 0) {
-                    content.innerHTML = '';
-                }
-                
-                content.appendChild(previewItem);
-            }
-            
-            if (jsonData.length > 3) {
-                const moreInfo = document.createElement('div');
-                moreInfo.innerHTML = `
+
+          // 로딩 표시 제거 후 아이템 추가
+          if (useGpt && index === 0) {
+            content.innerHTML = "";
+          }
+
+          content.appendChild(previewItem);
+        }
+
+        if (jsonData.length > 3) {
+          const moreInfo = document.createElement("div");
+          moreInfo.innerHTML = `
                     <div style="text-align: center; margin-top: 20px; padding: 15px; background: #f8f9ff; border-radius: 8px; border: 1px dashed #667eea;">
-                        <strong style="color: #667eea;">... 외 ${jsonData.length - 3}개 상품 더</strong>
+                        <strong style="color: #667eea;">... 외 ${
+                          jsonData.length - 3
+                        }개 상품 더</strong>
                         <p style="margin: 5px 0 0 0; font-size: 12px; color: #999;">
-                            ${useGpt ? 'GPT 변환은 실제 변환 시에만 모든 상품에 적용됩니다.' : ''}
+                            ${
+                              useGpt
+                                ? "GPT 변환은 실제 변환 시에만 모든 상품에 적용됩니다."
+                                : ""
+                            }
                         </p>
                     </div>
                 `;
-                content.appendChild(moreInfo);
-            }
-            
-            preview.style.display = 'block';
+          content.appendChild(moreInfo);
         }
 
-        function updateProgress(current, total, statusText = '', currentStep = '') {
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            const loadingText = document.getElementById('loadingText');
-            const processSpeed = document.getElementById('processSpeed');
-            const estimatedTime = document.getElementById('estimatedTime');
-            const currentStepEl = document.getElementById('currentStep');
-            
-            const percentage = (current / total) * 100;
-            
-            // 진행률 바 업데이트
-            progressFill.style.width = `${percentage}%`;
-            progressText.textContent = `${current} / ${total} 완료 (${percentage.toFixed(1)}%)`;
-            
-            if (statusText) {
-                loadingText.textContent = statusText;
+        preview.style.display = "block";
+      }
+
+      function updateProgress(
+        current,
+        total,
+        statusText = "",
+        currentStep = ""
+      ) {
+        const progressFill = document.getElementById("progressFill");
+        const progressText = document.getElementById("progressText");
+        const loadingText = document.getElementById("loadingText");
+        const processSpeed = document.getElementById("processSpeed");
+        const estimatedTime = document.getElementById("estimatedTime");
+        const currentStepEl = document.getElementById("currentStep");
+
+        const percentage = (current / total) * 100;
+
+        // 진행률 바 업데이트
+        progressFill.style.width = `${percentage}%`;
+        progressText.textContent = `${current} / ${total} 완료 (${percentage.toFixed(
+          1
+        )}%)`;
+
+        if (statusText) {
+          loadingText.textContent = statusText;
+        }
+
+        // 현재 단계 표시
+        if (currentStep) {
+          currentStepEl.textContent = currentStep;
+        } else if (current === 0) {
+          currentStepEl.textContent = "준비 중...";
+        } else if (current === total) {
+          currentStepEl.textContent = "완료!";
+        } else {
+          currentStepEl.textContent = `${current}번째 상품 처리 중`;
+        }
+
+        // 처리 속도 및 예상 시간 계산
+        const now = Date.now();
+        if (processingStartTime && current > 0) {
+          const elapsedTime = (now - processingStartTime) / 1000; // 초
+          const itemsPerSecond = current / elapsedTime;
+          const remainingItems = total - current;
+          const estimatedRemainingTime = remainingItems / itemsPerSecond;
+
+          // 처리 속도 표시
+          if (itemsPerSecond >= 1) {
+            processSpeed.textContent = `${itemsPerSecond.toFixed(1)} 상품/초`;
+          } else {
+            processSpeed.textContent = `${(60 / itemsPerSecond).toFixed(
+              1
+            )} 초/상품`;
+          }
+
+          // 예상 남은 시간 표시
+          if (current === total) {
+            estimatedTime.textContent = "완료!";
+          } else if (estimatedRemainingTime < 60) {
+            estimatedTime.textContent = `${Math.ceil(
+              estimatedRemainingTime
+            )}초`;
+          } else if (estimatedRemainingTime < 3600) {
+            const minutes = Math.ceil(estimatedRemainingTime / 60);
+            estimatedTime.textContent = `${minutes}분`;
+          } else {
+            const hours = Math.floor(estimatedRemainingTime / 3600);
+            const minutes = Math.ceil((estimatedRemainingTime % 3600) / 60);
+            estimatedTime.textContent = `${hours}시간 ${minutes}분`;
+          }
+        } else {
+          processSpeed.textContent = "계산 중...";
+          estimatedTime.textContent = "계산 중...";
+        }
+
+        // 진행률에 따른 색상 변경
+        if (percentage < 30) {
+          progressFill.style.background =
+            "linear-gradient(135deg, #ff6b6b, #ee5a52)";
+        } else if (percentage < 70) {
+          progressFill.style.background =
+            "linear-gradient(135deg, #feca57, #ff9ff3)";
+        } else {
+          progressFill.style.background =
+            "linear-gradient(135deg, #48dbfb, #0abde3)";
+        }
+
+        // 완료 시 녹색으로 변경
+        if (percentage >= 100) {
+          progressFill.style.background =
+            "linear-gradient(135deg, #1dd1a1, #10ac84)";
+          progressText.textContent = `${total} / ${total} 완료 (100%) - 처리 완료!`;
+          processSpeed.textContent = "완료!";
+          estimatedTime.textContent = "완료!";
+          currentStepEl.textContent = "모든 상품 처리 완료!";
+        }
+      }
+
+      async function convertToExcel() {
+        if (!jsonData) {
+          showAlert("먼저 JSON 파일을 업로드하세요.", "error");
+          return;
+        }
+
+        const useGpt = document.getElementById("useGpt").checked;
+        const skipImageUpload =
+          document.getElementById("skipImageUpload").checked;
+
+        if (useGpt && !localStorage.getItem("gptApiKey")) {
+          showAlert("GPT 사용을 위해 API Key를 설정해주세요.", "error");
+          return;
+        }
+
+        // 이미지 업로드 제외 모드 안내
+        if (skipImageUpload) {
+          showAlert(
+            "🔗 이미지 업로드 제외 모드가 활성화되었습니다.\n\n• 이미지BB 서버 (https://u363923.imgbb.com/)에서 파일명으로 이미지 검색\n• API를 통한 이미지 매칭 시도\n• 매칭되지 않는 이미지는 원본 URL 사용\n\n변환을 시작합니다...",
+            "info"
+          );
+        }
+
+        const loading = document.getElementById("loading");
+        const convertBtn = document.getElementById("convertBtn");
+        const downloadSection = document.getElementById("downloadSection");
+
+        // 로딩 시작 - 시간 추적 시작
+        processingStartTime = Date.now();
+        loading.style.display = "block";
+        convertBtn.disabled = true;
+        convertBtn.innerHTML = "⏳ Excel로 변환 중...";
+        convertBtn.style.opacity = "0.6";
+        convertBtn.style.cursor = "not-allowed";
+        downloadSection.style.display = "none";
+
+        // 진행률 초기화
+        updateProgress(
+          0,
+          jsonData.length,
+          "🔄 변환 준비 중...",
+          "시스템 초기화"
+        );
+
+        try {
+          const marginRate =
+            parseFloat(document.getElementById("marginRate").value) / 100;
+          let filename =
+            document.getElementById("filename").value || "products.xlsx";
+
+          if (!filename.toLowerCase().endsWith(".xlsx")) {
+            filename += ".xlsx";
+          }
+
+          // 로딩 메시지 설정
+          let baseLoadingMessage = "";
+          if (useGpt && !skipImageUpload) {
+            baseLoadingMessage = "🤖 GPT 개선 및 📷 이미지BB 업로드 중...";
+          } else if (useGpt && skipImageUpload) {
+            baseLoadingMessage = "🤖 GPT 개선 및 🔗 이미지BB 서버 검색 중...";
+          } else if (!useGpt && !skipImageUpload) {
+            baseLoadingMessage = "📷 이미지BB 업로드 및 📊 Excel 변환 중...";
+          } else {
+            baseLoadingMessage = "🔗 이미지BB 서버 매칭 및 📊 Excel 변환 중...";
+          }
+
+          updateProgress(
+            0,
+            jsonData.length,
+            baseLoadingMessage,
+            "데이터 분석 중"
+          );
+
+          // 약간의 딜레이로 UI 업데이트 보장
+          await new Promise((resolve) => setTimeout(resolve, 800));
+
+          // 변환 실행
+          const excelData = await priceParser.convertToExcelFormat(
+            jsonData,
+            marginRate,
+            useGpt,
+            skipImageUpload,
+            (current, total, status) => {
+              const detailStatus = status || baseLoadingMessage;
+              let currentStep = "";
+
+              if (useGpt && !skipImageUpload) {
+                currentStep = "GPT 개선 + 이미지BB 업로드";
+              } else if (useGpt && skipImageUpload) {
+                currentStep = "GPT 개선 + 이미지BB 검색";
+              } else if (!useGpt && !skipImageUpload) {
+                currentStep = "이미지BB 업로드";
+              } else {
+                currentStep = "이미지BB 서버 매칭";
+              }
+
+              updateProgress(
+                current,
+                total,
+                `${detailStatus} (${current}/${total})`,
+                currentStep
+              );
             }
-            
-            // 현재 단계 표시
-            if (currentStep) {
-                currentStepEl.textContent = currentStep;
-            } else if (current === 0) {
-                currentStepEl.textContent = '준비 중...';
-            } else if (current === total) {
-                currentStepEl.textContent = '완료!';
+          );
+
+          // 변환 결과 검증
+          if (!excelData || excelData.length < 2) {
+            throw new Error(
+              "변환된 데이터가 없습니다. 입력 파일을 확인해주세요."
+            );
+          }
+
+          // Excel 파일 생성 단계
+          updateProgress(
+            jsonData.length,
+            jsonData.length,
+            "📊 Excel 파일 생성 중...",
+            "Excel 파일 생성"
+          );
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
+
+          // 다운로드 준비
+          updateProgress(
+            jsonData.length,
+            jsonData.length,
+            "💾 다운로드 준비 중...",
+            "다운로드 준비"
+          );
+          await new Promise((resolve) => setTimeout(resolve, 300));
+
+          const downloadSuccess = downloadExcelFile(workbook, filename);
+
+          if (downloadSuccess) {
+            lastExcelData = excelData;
+            lastFilename = filename;
+
+            // 최종 완료 상태 업데이트
+            updateProgress(
+              jsonData.length,
+              jsonData.length,
+              "✅ 변환 완료!",
+              "다운로드 완료"
+            );
+
+            // 성공 메시지 생성
+            let successMessage = `✅ ${filename} 파일 다운로드가 완료되었습니다! (${jsonData.length}개 상품)`;
+
+            if (useGpt) {
+              successMessage += `\n🤖 GPT로 상품명과 설명이 개선되었습니다.`;
+            }
+
+            if (!skipImageUpload) {
+              successMessage += `\n📷 이미지가 이미지BB 서버에 업로드되었습니다.`;
+              successMessage += `\n🔗 서버: https://u363923.imgbb.com/`;
             } else {
-                currentStepEl.textContent = `${current}번째 상품 처리 중`;
+              successMessage += `\n🔗 이미지BB 서버에서 이미지를 검색하여 매칭했습니다.`;
+              successMessage += `\n🔍 서버: https://u363923.imgbb.com/`;
             }
-            
-            // 처리 속도 및 예상 시간 계산
-            const now = Date.now();
-            if (processingStartTime && current > 0) {
-                const elapsedTime = (now - processingStartTime) / 1000; // 초
-                const itemsPerSecond = current / elapsedTime;
-                const remainingItems = total - current;
-                const estimatedRemainingTime = remainingItems / itemsPerSecond;
-                
-                // 처리 속도 표시
-                if (itemsPerSecond >= 1) {
-                    processSpeed.textContent = `${itemsPerSecond.toFixed(1)} 상품/초`;
-                } else {
-                    processSpeed.textContent = `${(60 / itemsPerSecond).toFixed(1)} 초/상품`;
-                }
-                
-                // 예상 남은 시간 표시
-                if (current === total) {
-                    estimatedTime.textContent = '완료!';
-                } else if (estimatedRemainingTime < 60) {
-                    estimatedTime.textContent = `${Math.ceil(estimatedRemainingTime)}초`;
-                } else if (estimatedRemainingTime < 3600) {
-                    const minutes = Math.ceil(estimatedRemainingTime / 60);
-                    estimatedTime.textContent = `${minutes}분`;
-                } else {
-                    const hours = Math.floor(estimatedRemainingTime / 3600);
-                    const minutes = Math.ceil((estimatedRemainingTime % 3600) / 60);
-                    estimatedTime.textContent = `${hours}시간 ${minutes}분`;
-                }
-            } else {
-                processSpeed.textContent = '계산 중...';
-                estimatedTime.textContent = '계산 중...';
-            }
-            
-            // 진행률에 따른 색상 변경
-            if (percentage < 30) {
-                progressFill.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
-            } else if (percentage < 70) {
-                progressFill.style.background = 'linear-gradient(135deg, #feca57, #ff9ff3)';
-            } else {
-                progressFill.style.background = 'linear-gradient(135deg, #48dbfb, #0abde3)';
-            }
-            
-            // 완료 시 녹색으로 변경
-            if (percentage >= 100) {
-                progressFill.style.background = 'linear-gradient(135deg, #1dd1a1, #10ac84)';
-                progressText.textContent = `${total} / ${total} 완료 (100%) - 처리 완료!`;
-                processSpeed.textContent = '완료!';
-                estimatedTime.textContent = '완료!';
-                currentStepEl.textContent = '모든 상품 처리 완료!';
-            }
+
+            // 처리 시간 계산
+            const totalTime = (
+              (Date.now() - processingStartTime) /
+              1000
+            ).toFixed(1);
+            successMessage += `\n⏱️ 처리 시간: ${totalTime}초`;
+
+            showAlert(successMessage, "success");
+            downloadSection.style.display = "block";
+
+            // 버튼 상태 성공으로 변경
+            convertBtn.innerHTML = "✅ 변환 완료 - 다시 변환하기";
+            convertBtn.style.background =
+              "linear-gradient(135deg, #1dd1a1, #10ac84)";
+          } else {
+            throw new Error(
+              "다운로드에 실패했습니다. 브라우저 설정을 확인해주세요."
+            );
+          }
+        } catch (error) {
+          console.error("변환 실행 오류:", error);
+
+          let errorMessage = "❌ 변환 중 오류가 발생했습니다: " + error.message;
+
+          // 구체적인 오류 타입별 안내
+          if (
+            error.message.includes("CORS") ||
+            error.message.includes("Failed to fetch")
+          ) {
+            errorMessage +=
+              "\n\n🔧 CORS 문제로 보입니다. API Key 테스트를 눌러 해결 방법을 확인하세요.";
+          } else if (
+            error.message.includes("이미지") ||
+            error.message.includes("imgbb")
+          ) {
+            errorMessage += "\n\n📷 이미지BB 연동 중 문제가 발생했습니다.";
+            errorMessage += "\n\n해결 방법:";
+            errorMessage += "\n• 인터넷 연결 상태 확인";
+            errorMessage +=
+              "\n• 이미지BB 서버 상태 확인 (https://u363923.imgbb.com/)";
+            errorMessage +=
+              "\n• API 키 상태 확인 (011d34358627a1b5f4882bd4f33cbbfa)";
+          } else if (error.message.includes("GPT")) {
+            errorMessage +=
+              '\n\n🤖 GPT 처리 중 문제가 발생했습니다. "GPT 사용" 옵션을 해제하고 다시 시도해보세요.';
+          } else if (error.message.includes("변환된 데이터가 없습니다")) {
+            errorMessage +=
+              "\n\n📄 JSON 파일 형식을 확인해주세요. 올바른 상품 데이터가 포함되어 있는지 확인하세요.";
+          }
+
+          showAlert(errorMessage, "error");
+
+          // 버튼 상태 오류로 변경
+          convertBtn.innerHTML = "❌ 변환 실패 - 다시 시도";
+          convertBtn.style.background =
+            "linear-gradient(135deg, #ff6b6b, #ee5a52)";
+
+          // 진행률 오류 표시
+          updateProgress(0, jsonData.length, "❌ 변환 실패", "오류 발생");
+        } finally {
+          // 로딩 상태 해제 (3초 후)
+          setTimeout(() => {
+            loading.style.display = "none";
+            convertBtn.disabled = false;
+            convertBtn.style.opacity = "1";
+            convertBtn.style.cursor = "pointer";
+
+            // 버튼 원래 상태로 복귀
+            convertBtn.innerHTML = "🔄 Excel로 변환 및 다운로드";
+            convertBtn.style.background =
+              "linear-gradient(135deg, #764ba2, #667eea)";
+
+            // 진행률 리셋
+            document.getElementById("progressFill").style.width = "0%";
+            document.getElementById("progressText").textContent = "0 / 0 완료";
+            document.getElementById("progressFill").style.background =
+              "linear-gradient(135deg, #667eea, #764ba2)";
+
+            // 처리 시간 변수 리셋
+            processingStartTime = null;
+          }, 3000);
+        }
+      }
+
+      function downloadExcelFile(workbook, filename) {
+        try {
+          XLSX.writeFile(workbook, filename);
+          return true;
+        } catch (error) {
+          console.log("XLSX.writeFile 실패, 대체 방법 사용:", error);
+
+          try {
+            const excelBuffer = XLSX.write(workbook, {
+              bookType: "xlsx",
+              type: "array",
+            });
+            const blob = new Blob([excelBuffer], {
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = filename;
+
+            document.body.appendChild(link);
+            link.click();
+
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            return true;
+          } catch (blobError) {
+            console.error("Blob 다운로드도 실패:", blobError);
+            return false;
+          }
+        }
+      }
+
+      function downloadAgain() {
+        if (!lastExcelData || !lastFilename) {
+          showAlert(
+            "다운로드할 파일이 없습니다. 먼저 변환을 진행하세요.",
+            "error"
+          );
+          return;
         }
 
-        async function convertToExcel() {
-            if (!jsonData) {
-                showAlert('먼저 JSON 파일을 업로드하세요.', 'error');
-                return;
-            }
+        try {
+          const worksheet = XLSX.utils.aoa_to_sheet(lastExcelData);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
 
-            const useGpt = document.getElementById('useGpt').checked;
-            const skipImageUpload = document.getElementById('skipImageUpload').checked;
-            
-            if (useGpt && !localStorage.getItem('gptApiKey')) {
-                showAlert('GPT 사용을 위해 API Key를 설정해주세요.', 'error');
-                return;
-            }
+          const downloadSuccess = downloadExcelFile(workbook, lastFilename);
 
-            // 이미지 업로드 제외 모드 안내
-            if (skipImageUpload) {
-                showAlert('🔗 이미지 업로드 제외 모드가 활성화되었습니다.\n\n• 이미지BB 서버 (https://u363923.imgbb.com/)에서 파일명으로 이미지 검색\n• API를 통한 이미지 매칭 시도\n• 매칭되지 않는 이미지는 원본 URL 사용\n\n변환을 시작합니다...', 'info');
-            }
+          if (downloadSuccess) {
+            showAlert(
+              `✅ ${lastFilename} 파일을 다시 다운로드했습니다!`,
+              "success"
+            );
+          } else {
+            showAlert("❌ 다운로드에 실패했습니다.", "error");
+          }
+        } catch (error) {
+          showAlert("❌ 다운로드 중 오류가 발생했습니다.", "error");
+          console.error("다운로드 오류:", error);
+        }
+      }
 
-            const loading = document.getElementById('loading');
-            const convertBtn = document.getElementById('convertBtn');
-            const downloadSection = document.getElementById('downloadSection');
-            
-            // 로딩 시작 - 시간 추적 시작
-            processingStartTime = Date.now();
-            loading.style.display = 'block';
-            convertBtn.disabled = true;
-            convertBtn.innerHTML = '⏳ Excel로 변환 중...';
-            convertBtn.style.opacity = '0.6';
-            convertBtn.style.cursor = 'not-allowed';
-            downloadSection.style.display = 'none';
-            
-            // 진행률 초기화
-            updateProgress(0, jsonData.length, '🔄 변환 준비 중...', '시스템 초기화');
+      function clearImageCache() {
+        const savedImages = localStorage.getItem("imgbbImageMap");
+        const imageCount = savedImages
+          ? Object.keys(JSON.parse(savedImages)).length
+          : 0;
 
-            try {
-                const marginRate = parseFloat(document.getElementById('marginRate').value) / 100;
-                let filename = document.getElementById('filename').value || 'products.xlsx';
-                
-                if (!filename.toLowerCase().endsWith('.xlsx')) {
-                    filename += '.xlsx';
-                }
-
-                // 로딩 메시지 설정
-                let baseLoadingMessage = '';
-                if (useGpt && !skipImageUpload) {
-                    baseLoadingMessage = '🤖 GPT 개선 및 📷 이미지BB 업로드 중...';
-                } else if (useGpt && skipImageUpload) {
-                    baseLoadingMessage = '🤖 GPT 개선 및 🔗 이미지BB 서버 검색 중...';
-                } else if (!useGpt && !skipImageUpload) {
-                    baseLoadingMessage = '📷 이미지BB 업로드 및 📊 Excel 변환 중...';
-                } else {
-                    baseLoadingMessage = '🔗 이미지BB 서버 매칭 및 📊 Excel 변환 중...';
-                }
-
-                updateProgress(0, jsonData.length, baseLoadingMessage, '데이터 분석 중');
-                
-                // 약간의 딜레이로 UI 업데이트 보장
-                await new Promise(resolve => setTimeout(resolve, 800));
-
-                // 변환 실행
-                const excelData = await priceParser.convertToExcelFormat(
-                    jsonData, 
-                    marginRate, 
-                    useGpt,
-                    skipImageUpload,
-                    (current, total, status) => {
-                        const detailStatus = status || baseLoadingMessage;
-                        let currentStep = '';
-                        
-                        if (useGpt && !skipImageUpload) {
-                            currentStep = 'GPT 개선 + 이미지BB 업로드';
-                        } else if (useGpt && skipImageUpload) {
-                            currentStep = 'GPT 개선 + 이미지BB 검색';
-                        } else if (!useGpt && !skipImageUpload) {
-                            currentStep = '이미지BB 업로드';
-                        } else {
-                            currentStep = '이미지BB 서버 매칭';
-                        }
-                        
-                        updateProgress(current, total, `${detailStatus} (${current}/${total})`, currentStep);
-                    }
-                );
-                
-                // 변환 결과 검증
-                if (!excelData || excelData.length < 2) {
-                    throw new Error('변환된 데이터가 없습니다. 입력 파일을 확인해주세요.');
-                }
-                
-                // Excel 파일 생성 단계
-                updateProgress(jsonData.length, jsonData.length, '📊 Excel 파일 생성 중...', 'Excel 파일 생성');
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                const worksheet = XLSX.utils.aoa_to_sheet(excelData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
-                
-                // 다운로드 준비
-                updateProgress(jsonData.length, jsonData.length, '💾 다운로드 준비 중...', '다운로드 준비');
-                await new Promise(resolve => setTimeout(resolve, 300));
-                
-                const downloadSuccess = downloadExcelFile(workbook, filename);
-                
-                if (downloadSuccess) {
-                    lastExcelData = excelData;
-                    lastFilename = filename;
-                    
-                    // 최종 완료 상태 업데이트
-                    updateProgress(jsonData.length, jsonData.length, '✅ 변환 완료!', '다운로드 완료');
-                    
-                    // 성공 메시지 생성
-                    let successMessage = `✅ ${filename} 파일 다운로드가 완료되었습니다! (${jsonData.length}개 상품)`;
-                    
-                    if (useGpt) {
-                        successMessage += `\n🤖 GPT로 상품명과 설명이 개선되었습니다.`;
-                    }
-                    
-                    if (!skipImageUpload) {
-                        successMessage += `\n📷 이미지가 이미지BB 서버에 업로드되었습니다.`;
-                        successMessage += `\n🔗 서버: https://u363923.imgbb.com/`;
-                    } else {
-                        successMessage += `\n🔗 이미지BB 서버에서 이미지를 검색하여 매칭했습니다.`;
-                        successMessage += `\n🔍 서버: https://u363923.imgbb.com/`;
-                    }
-                    
-                    // 처리 시간 계산
-                    const totalTime = ((Date.now() - processingStartTime) / 1000).toFixed(1);
-                    successMessage += `\n⏱️ 처리 시간: ${totalTime}초`;
-                    
-                    showAlert(successMessage, 'success');
-                    downloadSection.style.display = 'block';
-                    
-                    // 버튼 상태 성공으로 변경
-                    convertBtn.innerHTML = '✅ 변환 완료 - 다시 변환하기';
-                    convertBtn.style.background = 'linear-gradient(135deg, #1dd1a1, #10ac84)';
-                    
-                } else {
-                    throw new Error('다운로드에 실패했습니다. 브라우저 설정을 확인해주세요.');
-                }
-                
-            } catch (error) {
-                console.error('변환 실행 오류:', error);
-                
-                let errorMessage = '❌ 변환 중 오류가 발생했습니다: ' + error.message;
-                
-                // 구체적인 오류 타입별 안내
-                if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
-                    errorMessage += '\n\n🔧 CORS 문제로 보입니다. API Key 테스트를 눌러 해결 방법을 확인하세요.';
-                } else if (error.message.includes('이미지') || error.message.includes('imgbb')) {
-                    errorMessage += '\n\n📷 이미지BB 연동 중 문제가 발생했습니다.';
-                    errorMessage += '\n\n해결 방법:';
-                    errorMessage += '\n• 인터넷 연결 상태 확인';
-                    errorMessage += '\n• 이미지BB 서버 상태 확인 (https://u363923.imgbb.com/)';
-                    errorMessage += '\n• API 키 상태 확인 (011d34358627a1b5f4882bd4f33cbbfa)';
-                } else if (error.message.includes('GPT')) {
-                    errorMessage += '\n\n🤖 GPT 처리 중 문제가 발생했습니다. "GPT 사용" 옵션을 해제하고 다시 시도해보세요.';
-                } else if (error.message.includes('변환된 데이터가 없습니다')) {
-                    errorMessage += '\n\n📄 JSON 파일 형식을 확인해주세요. 올바른 상품 데이터가 포함되어 있는지 확인하세요.';
-                }
-                
-                showAlert(errorMessage, 'error');
-                
-                // 버튼 상태 오류로 변경
-                convertBtn.innerHTML = '❌ 변환 실패 - 다시 시도';
-                convertBtn.style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
-                
-                // 진행률 오류 표시
-                updateProgress(0, jsonData.length, '❌ 변환 실패', '오류 발생');
-                
-            } finally {
-                // 로딩 상태 해제 (3초 후)
-                setTimeout(() => {
-                    loading.style.display = 'none';
-                    convertBtn.disabled = false;
-                    convertBtn.style.opacity = '1';
-                    convertBtn.style.cursor = 'pointer';
-                    
-                    // 버튼 원래 상태로 복귀
-                    convertBtn.innerHTML = '🔄 Excel로 변환 및 다운로드';
-                    convertBtn.style.background = 'linear-gradient(135deg, #764ba2, #667eea)';
-                    
-                    // 진행률 리셋
-                    document.getElementById('progressFill').style.width = '0%';
-                    document.getElementById('progressText').textContent = '0 / 0 완료';
-                    document.getElementById('progressFill').style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
-                    
-                    // 처리 시간 변수 리셋
-                    processingStartTime = null;
-                }, 3000);
-            }
+        if (imageCount === 0) {
+          showAlert("삭제할 이미지 캐시가 없습니다.", "info");
+          return;
         }
 
-        function downloadExcelFile(workbook, filename) {
-            try {
-                XLSX.writeFile(workbook, filename);
-                return true;
-            } catch (error) {
-                console.log('XLSX.writeFile 실패, 대체 방법 사용:', error);
-                
-                try {
-                    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                    
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = filename;
-                    
-                    document.body.appendChild(link);
-                    link.click();
-                    
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                    
-                    return true;
-                } catch (blobError) {
-                    console.error('Blob 다운로드도 실패:', blobError);
-                    return false;
-                }
-            }
+        const confirm = window.confirm(
+          `저장된 이미지 캐시를 모두 삭제하시겠습니까?\n\n현재 ${imageCount}개의 이미지가 저장되어 있습니다.\n삭제 후에는 "이미지 업로드 제외" 옵션을 사용할 수 없습니다.`
+        );
+
+        if (confirm) {
+          localStorage.removeItem("imgbbImageMap");
+          priceParser.uploadedImageMap.clear();
+          showAlert(
+            `✅ ${imageCount}개의 이미지 캐시가 삭제되었습니다.`,
+            "success"
+          );
+        }
+      }
+
+      function showImageCache() {
+        const savedImages = localStorage.getItem("imgbbImageMap");
+
+        if (!savedImages) {
+          showAlert(
+            "💡 저장된 이미지 캐시가 없습니다.\n\n이미지 업로드를 한 번 실행하면 이미지들이 이미지BB에 저장되어 캐시에 등록됩니다.",
+            "info"
+          );
+          return;
         }
 
-        function downloadAgain() {
-            if (!lastExcelData || !lastFilename) {
-                showAlert('다운로드할 파일이 없습니다. 먼저 변환을 진행하세요.', 'error');
-                return;
-            }
+        const imageMap = JSON.parse(savedImages);
+        const imageCount = Object.keys(imageMap).length;
 
-            try {
-                const worksheet = XLSX.utils.aoa_to_sheet(lastExcelData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
-                
-                const downloadSuccess = downloadExcelFile(workbook, lastFilename);
-                
-                if (downloadSuccess) {
-                    showAlert(`✅ ${lastFilename} 파일을 다시 다운로드했습니다!`, 'success');
-                } else {
-                    showAlert('❌ 다운로드에 실패했습니다.', 'error');
-                }
-            } catch (error) {
-                showAlert('❌ 다운로드 중 오류가 발생했습니다.', 'error');
-                console.error('다운로드 오류:', error);
-            }
+        if (imageCount === 0) {
+          showAlert("저장된 이미지 캐시가 없습니다.", "info");
+          return;
         }
 
-        function clearImageCache() {
-            const savedImages = localStorage.getItem('imgbbImageMap');
-            const imageCount = savedImages ? Object.keys(JSON.parse(savedImages)).length : 0;
-            
-            if (imageCount === 0) {
-                showAlert('삭제할 이미지 캐시가 없습니다.', 'info');
-                return;
-            }
-            
-            const confirm = window.confirm(`저장된 이미지 캐시를 모두 삭제하시겠습니까?\n\n현재 ${imageCount}개의 이미지가 저장되어 있습니다.\n삭제 후에는 "이미지 업로드 제외" 옵션을 사용할 수 없습니다.`);
-            
-            if (confirm) {
-                localStorage.removeItem('imgbbImageMap');
-                priceParser.uploadedImageMap.clear();
-                showAlert(`✅ ${imageCount}개의 이미지 캐시가 삭제되었습니다.`, 'success');
-            }
-        }
-
-        function showImageCache() {
-            const savedImages = localStorage.getItem('imgbbImageMap');
-            
-            if (!savedImages) {
-                showAlert('💡 저장된 이미지 캐시가 없습니다.\n\n이미지 업로드를 한 번 실행하면 이미지들이 이미지BB에 저장되어 캐시에 등록됩니다.', 'info');
-                return;
-            }
-
-            const imageMap = JSON.parse(savedImages);
-            const imageCount = Object.keys(imageMap).length;
-            
-            if (imageCount === 0) {
-                showAlert('저장된 이미지 캐시가 없습니다.', 'info');
-                return;
-            }
-
-            // 캐시 정보를 HTML로 표시
-            const cacheInfoHtml = `
+        // 캐시 정보를 HTML로 표시
+        const cacheInfoHtml = `
                 <div style="background: #f8f9ff; padding: 15px; border-radius: 10px; margin: 10px 0;">
                     <h3 style="color: #667eea; margin: 0 0 15px 0;">📷 이미지 캐시 정보</h3>
                     <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
@@ -1541,13 +1925,24 @@
                     </div>
                     <div style="background: white; padding: 15px; border-radius: 8px; max-height: 200px; overflow-y: auto;">
                         <div style="font-weight: bold; color: #333; margin-bottom: 10px;">이미지 목록:</div>
-                        ${Object.entries(imageMap).slice(0, 10).map(([key, value]) => `
+                        ${Object.entries(imageMap)
+                          .slice(0, 10)
+                          .map(
+                            ([key, value]) => `
                             <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
                                 <span style="color: #666; font-size: 14px; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${key}</span>
                                 <a href="${value}" target="_blank" style="color: #667eea; text-decoration: none; font-size: 12px;">🔗 보기</a>
                             </div>
-                        `).join('')}
-                        ${imageCount > 10 ? `<div style="text-align: center; color: #999; font-size: 12px; margin-top: 10px;">... 외 ${imageCount - 10}개 더</div>` : ''}
+                        `
+                          )
+                          .join("")}
+                        ${
+                          imageCount > 10
+                            ? `<div style="text-align: center; color: #999; font-size: 12px; margin-top: 10px;">... 외 ${
+                                imageCount - 10
+                              }개 더</div>`
+                            : ""
+                        }
                     </div>
                     <div style="background: #e8f4fd; padding: 10px; border-radius: 8px; margin-top: 15px;">
                         <div style="font-size: 12px; color: #0066cc; line-height: 1.4;">
@@ -1559,49 +1954,35 @@
                     </div>
                 </div>
             `;
-            
-            const alertDiv = document.getElementById('alert');
-            alertDiv.innerHTML = cacheInfoHtml;
-            alertDiv.className = 'alert info';
-            alertDiv.style.display = 'block';
-            
-            // 10초 후 자동 숨김
-            setTimeout(() => {
-                alertDiv.style.display = 'none';
-            }, 10000);
-        }
 
-        function checkImageCacheStatus() {
-            const savedImages = localStorage.getItem('imgbbImageMap');
-            const imageCount = savedImages ? Object.keys(JSON.parse(savedImages)).length : 0;
-            
-            // 체크박스 상태에 따른 안내 메시지 업데이트
-            const skipImageUpload = document.getElementById('skipImageUpload').checked;
-            const infoDiv = document.querySelector('.settings > div:last-child');
-            
-            if (skipImageUpload) {
-                if (imageCount > 0) {
-                    infoDiv.innerHTML = `
-                        <div style="margin-top: 15px; padding: 10px; background: #e8f4fd; border-radius: 5px; font-size: 12px; color: #0066cc;">
-                            💡 <strong>이미지 업로드 제외 모드 (${imageCount}개 이미지 캐시 사용)</strong><br>
-                            • 저장된 이미지를 이미지BB에서 찾아서 매칭합니다<br>
-                            • 새로운 이미지 업로드는 하지 않아 변환 속도가 빠릅니다<br>
-                            • 매칭되지 않는 이미지는 원본 URL을 사용합니다<br>
-                            • GPT 사용 시 텍스트 개선만 진행됩니다
-                        </div>
-                    `;
-                } else {
-                    infoDiv.innerHTML = `
-                        <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px; color: #856404;">
-                            ⚠️ <strong>이미지 캐시가 없습니다</strong><br>
-                            • 저장된 이미지가 없어 모든 이미지가 원본 URL을 사용합니다<br>
-                            • 안정적인 이미지 링크를 위해 "이미지 업로드 제외" 체크를 해제하는 것을 권장합니다<br>
-                            • 첫 번째 변환 시에는 이미지 업로드를 실행하여 캐시를 만드세요
-                        </div>
-                    `;
-                }
-            } else {
-                infoDiv.innerHTML = `
+        const alertDiv = document.getElementById("alert");
+        alertDiv.innerHTML = cacheInfoHtml;
+        alertDiv.className = "alert info";
+        alertDiv.style.display = "block";
+
+        // 10초 후 자동 숨김
+        setTimeout(() => {
+          alertDiv.style.display = "none";
+        }, 10000);
+      }
+
+      function checkImageCacheStatus() {
+        const skipImageUpload =
+          document.getElementById("skipImageUpload").checked;
+        const infoDiv = document.querySelector(".settings > div:last-child");
+
+        if (skipImageUpload) {
+          infoDiv.innerHTML = `
+                    <div style="margin-top: 15px; padding: 10px; background: #e8f4fd; border-radius: 5px; font-size: 12px; color: #0066cc;">
+                        💡 <strong>이미지 업로드 제외 모드</strong><br>
+                        • 이미지BB 서버 (https://u363923.imgbb.com/)에서 파일명으로 이미지 검색<br>
+                        • 새로운 이미지 업로드는 하지 않아 변환 속도가 빠릅니다<br>
+                        • 매칭되지 않는 이미지는 원본 URL을 사용합니다<br>
+                        • API 키: 011d34358627a1b5f4882bd4f33cbbfa
+                    </div>
+                `;
+        } else {
+          infoDiv.innerHTML = `
                     <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px; color: #856404;">
                         💡 <strong>GPT 사용 시 주의사항:</strong><br>
                         • 상품명, 기본설명, 상품설명이 모두 개선되어 API 비용이 증가할 수 있습니다<br>
@@ -1610,46 +1991,54 @@
                         • 오류 발생 시 "API Key 테스트"를 눌러 해결 방법을 확인하세요
                     </div>
                 `;
-            }
+        }
+      }
+
+      function forceDownload() {
+        if (!lastExcelData || !lastFilename) {
+          showAlert(
+            "다운로드할 파일이 없습니다. 먼저 변환을 진행하세요.",
+            "error"
+          );
+          return;
         }
 
-        function forceDownload() {
-            if (!lastExcelData || !lastFilename) {
-                showAlert('다운로드할 파일이 없습니다. 먼저 변환을 진행하세요.', 'error');
-                return;
-            }
+        try {
+          const worksheet = XLSX.utils.aoa_to_sheet(lastExcelData);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
 
-            try {
-                const worksheet = XLSX.utils.aoa_to_sheet(lastExcelData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
-                
-                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                const blob = new Blob([excelBuffer], { 
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-                });
-                
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = lastFilename;
-                link.style.display = 'none';
-                
-                document.body.appendChild(link);
-                link.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                }, 100);
-                
-                showAlert(`✅ ${lastFilename} 강제 다운로드 완료!`, 'success');
-                
-            } catch (error) {
-                showAlert('❌ 강제 다운로드도 실패했습니다. 브라우저를 확인해주세요.', 'error');
-                console.error('강제 다운로드 오류:', error);
-            }
+          const excelBuffer = XLSX.write(workbook, {
+            bookType: "xlsx",
+            type: "array",
+          });
+          const blob = new Blob([excelBuffer], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          });
+
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = lastFilename;
+          link.style.display = "none";
+
+          document.body.appendChild(link);
+          link.click();
+
+          setTimeout(() => {
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+          }, 100);
+
+          showAlert(`✅ ${lastFilename} 강제 다운로드 완료!`, "success");
+        } catch (error) {
+          showAlert(
+            "❌ 강제 다운로드도 실패했습니다. 브라우저를 확인해주세요.",
+            "error"
+          );
+          console.error("강제 다운로드 오류:", error);
         }
+      }
     </script>
-</body>
+  </body>
 </html>
