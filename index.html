@@ -1263,15 +1263,9 @@
                 return;
             }
 
-            // 이미지 업로드 제외 모드 체크
+            // 이미지 업로드 제외 모드 안내
             if (skipImageUpload) {
-                const savedImages = localStorage.getItem('imgbbImageMap');
-                if (!savedImages) {
-                    const confirm = window.confirm('저장된 이미지가 없습니다.\n\n이미지 업로드 제외 모드에서는 이전에 업로드한 이미지가 필요합니다.\n원본 이미지 URL을 사용하여 계속 진행하시겠습니까?');
-                    if (!confirm) {
-                        return;
-                    }
-                }
+                showAlert('🔗 이미지 업로드 제외 모드가 활성화되었습니다.\n\n• 이미지BB 서버 (https://u363923.imgbb.com/)에서 파일명으로 이미지 검색\n• API를 통한 이미지 매칭 시도\n• 매칭되지 않는 이미지는 원본 URL 사용\n\n변환을 시작합니다...', 'info');
             }
 
             const loading = document.getElementById('loading');
@@ -1301,13 +1295,13 @@
                 // 로딩 메시지 설정
                 let baseLoadingMessage = '';
                 if (useGpt && !skipImageUpload) {
-                    baseLoadingMessage = '🤖 GPT 개선 및 📷 이미지 업로드 중...';
+                    baseLoadingMessage = '🤖 GPT 개선 및 📷 이미지BB 업로드 중...';
                 } else if (useGpt && skipImageUpload) {
-                    baseLoadingMessage = '🤖 GPT 개선 및 🔗 이미지 매칭 중...';
+                    baseLoadingMessage = '🤖 GPT 개선 및 🔗 이미지BB 서버 검색 중...';
                 } else if (!useGpt && !skipImageUpload) {
-                    baseLoadingMessage = '📷 이미지 업로드 및 📊 Excel 변환 중...';
+                    baseLoadingMessage = '📷 이미지BB 업로드 및 📊 Excel 변환 중...';
                 } else {
-                    baseLoadingMessage = '🔗 이미지 매칭 및 📊 Excel 변환 중...';
+                    baseLoadingMessage = '🔗 이미지BB 서버 매칭 및 📊 Excel 변환 중...';
                 }
 
                 updateProgress(0, jsonData.length, baseLoadingMessage, '데이터 분석 중');
@@ -1326,13 +1320,13 @@
                         let currentStep = '';
                         
                         if (useGpt && !skipImageUpload) {
-                            currentStep = 'GPT 개선 + 이미지 업로드';
+                            currentStep = 'GPT 개선 + 이미지BB 업로드';
                         } else if (useGpt && skipImageUpload) {
-                            currentStep = 'GPT 개선 + 이미지 매칭';
+                            currentStep = 'GPT 개선 + 이미지BB 검색';
                         } else if (!useGpt && !skipImageUpload) {
-                            currentStep = '이미지 업로드';
+                            currentStep = '이미지BB 업로드';
                         } else {
-                            currentStep = '이미지 매칭';
+                            currentStep = '이미지BB 서버 매칭';
                         }
                         
                         updateProgress(current, total, `${detailStatus} (${current}/${total})`, currentStep);
@@ -1373,11 +1367,11 @@
                     }
                     
                     if (!skipImageUpload) {
-                        successMessage += `\n📷 이미지가 이미지BB에 업로드되었습니다.`;
+                        successMessage += `\n📷 이미지가 이미지BB 서버에 업로드되었습니다.`;
+                        successMessage += `\n🔗 서버: https://u363923.imgbb.com/`;
                     } else {
-                        const savedImages = localStorage.getItem('imgbbImageMap');
-                        const imageCount = savedImages ? Object.keys(JSON.parse(savedImages)).length : 0;
-                        successMessage += `\n🔗 기존 이미지가 매칭되었습니다. (${imageCount}개 이미지 캐시 사용)`;
+                        successMessage += `\n🔗 이미지BB 서버에서 이미지를 검색하여 매칭했습니다.`;
+                        successMessage += `\n🔍 서버: https://u363923.imgbb.com/`;
                     }
                     
                     // 처리 시간 계산
@@ -1403,8 +1397,12 @@
                 // 구체적인 오류 타입별 안내
                 if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
                     errorMessage += '\n\n🔧 CORS 문제로 보입니다. API Key 테스트를 눌러 해결 방법을 확인하세요.';
-                } else if (error.message.includes('이미지')) {
-                    errorMessage += '\n\n📷 이미지 처리 중 문제가 발생했습니다. "이미지 업로드 제외" 옵션을 사용해보세요.';
+                } else if (error.message.includes('이미지') || error.message.includes('imgbb')) {
+                    errorMessage += '\n\n📷 이미지BB 연동 중 문제가 발생했습니다.';
+                    errorMessage += '\n\n해결 방법:';
+                    errorMessage += '\n• 인터넷 연결 상태 확인';
+                    errorMessage += '\n• 이미지BB 서버 상태 확인 (https://u363923.imgbb.com/)';
+                    errorMessage += '\n• API 키 상태 확인 (011d34358627a1b5f4882bd4f33cbbfa)';
                 } else if (error.message.includes('GPT')) {
                     errorMessage += '\n\n🤖 GPT 처리 중 문제가 발생했습니다. "GPT 사용" 옵션을 해제하고 다시 시도해보세요.';
                 } else if (error.message.includes('변환된 데이터가 없습니다')) {
