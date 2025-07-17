@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to Excel 변환기</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        // 이익률 변경 시 미리보기 업데이트
+        document.getElementById('marginRate').addEventListener('input', function() {
+            if (jsonData) {
+                showPreview(jsonData.slice(0, 3));
+            }
+        });
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f1ff;
+        }
+        
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8eaff;
+            transform: scale(1.02);
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .settings {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .setting-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        input[type="number"], input[type="text"] {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 150px;
+        }
+        
+        input[type="number"]:focus, input[type="text"]:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .convert-btn {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .convert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(118, 75, 162, 0.3);
+        }
+        
+        .convert-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .preview h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .preview-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .price-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .price-box {
+            background: #f0f1ff;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .price-box strong {
+            display: block;
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: bold;
+            background: #f0f1ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .download-section {
+            margin-top: 20px;
+            animation: slideDown 0.5s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 JSON to Excel 변환기</h1>
+        
+        <div class="alert" id="alert"></div>
+        
+        <div class="upload-area" id="uploadArea">
+            <p style="font-size: 18px; color: #667eea; margin: 0 0 20px 0;">
+                <strong>JSON 파일을 드래그하거나 클릭하여 업로드하세요</strong>
+            </p>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                📁 파일 선택
+            </button>
+            <input type="file" id="fileInput" accept=".json" />
+            <p style="margin: 20px 0 0 0; color: #666;">
+                지원 형식: JSON (.json)
+            </p>
+        </div>
+        
+        <div class="settings">
+            <h3 style="margin-top: 0; color: #333;">⚙️ 변환 설정</h3>
+            <div class="setting-item">
+                <label for="marginRate">이익률 (%):</label>
+                <input type="number" id="marginRate" value="40" min="0" max="100" step="0.1" />
+            </div>
+            <div class="setting-item">
+                <label for="filename">파일명:</label>
+                <input type="text" id="filename" value="products.xlsx" />
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 12px; color: #856404;">
+                💡 <strong>다운로드 팁:</strong> 파일이 다운로드되지 않으면 브라우저의 팝업 차단을 해제하거나 "강제 다운로드" 버튼을 사용하세요.
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Excel 파일 변환 중...</p>
+            <p style="font-size: 14px; color: #999;">변환 완료 후 자동으로 다운로드됩니다</p>
+        </div>
+        
+        <button class="convert-btn" id="convertBtn" disabled onclick="convertToExcel()">
+            🔄 Excel로 변환 및 다운로드
+        </button>
+        
+        <div class="download-section" id="downloadSection" style="display: none;">
+            <div style="text-align: center; padding: 20px; background: #d4edda; border-radius: 10px; margin-top: 20px;">
+                <h3 style="color: #155724; margin: 0 0 10px 0;">✅ 변환 완료!</h3>
+                <p style="color: #155724; margin: 0 0 15px 0;">Excel 파일이 성공적으로 생성되었습니다.</p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="upload-btn" id="downloadBtn" onclick="downloadAgain()">
+                        📥 다시 다운로드
+                    </button>
+                    <button class="upload-btn" onclick="forceDownload()" style="background: linear-gradient(135deg, #28a745, #20c997);">
+                        💾 강제 다운로드
+                    </button>
+                </div>
+                <p style="color: #666; font-size: 12px; margin: 10px 0 0 0;">
+                    다운로드가 안 되면 "강제 다운로드"를 클릭하세요
+                </p>
+            </div>
+        </div>
+        
+        <div class="preview" id="preview">
+            <h3>📋 변환 미리보기</h3>
+            <div id="previewContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // PriceParser 클래스
+        class PriceParser {
+            constructor() {
+                this.defaultMarginRate = 0.4;
+            }
+
+            extractPriceFromContent(content) {
+                const priceMatch = content.match(/(\d+\.\d+)$/);
+                if (priceMatch) {
+                    return parseFloat(priceMatch[1]);
+                }
+                return null;
+            }
+
+            convertToWon(price) {
+                return Math.round(price * 10000);
+            }
+
+            calculateSellingPrice(costPrice, marginRate = this.defaultMarginRate) {
+                return Math.round(costPrice * (1 + marginRate));
+            }
+
+            getByteLength(str) {
+                let byteLength = 0;
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charAt(i);
+                    if (char.match(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/)) {
+                        byteLength += 3;
+                    } else {
+                        byteLength += 1;
+                    }
+                }
+                return byteLength;
+            }
+
+            limitStringByBytes(str, maxBytes) {
+                if (!str) return '';
+                
+                let result = '';
+                let byteLength = 0;
+                
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charAt(i);
+                    const charBytes = char.match(/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/) ? 3 : 1;
+                    
+                    if (byteLength + charBytes > maxBytes) {
+                        break;
+                    }
+                    
+                    result += char;
+                    byteLength += charBytes;
+                }
+                
+                return result;
+            }
+
+            extractProductName(content) {
+                if (!content) return '';
+                
+                const textOnly = content.replace(/<[^>]*>/g, '');
+                const lines = textOnly.split('\n');
+                let productName = lines[0] || '';
+                
+                const exclamationIndex = productName.indexOf('!!');
+                if (exclamationIndex !== -1) {
+                    productName = productName.substring(0, exclamationIndex);
+                }
+                
+                productName = productName.replace(/\d+\.\d+$/, '').trim();
+                return productName;
+            }
+
+            convertToExcelFormat(jsonData, marginRate = this.defaultMarginRate) {
+                const headers = [
+                    '상품코드', '기본분류', '분류2', '분류3', '상품명', '제조사', '원산지', '브랜드', '모델',
+                    '상품유형1', '상품유형2', '상품유형3', '상품유형4', '상품유형5', '기본설명', '상품설명', 
+                    '모바일상품설명', '시중가격', '판매가격', '전화문의', '포인트', '포인트타입', '판매자이메일',
+                    '판매가능', '재고수량', '재고통보수량', '최소구매수량', '최대구매수량', '과세유형', '정렬순서',
+                    '이미지1', '이미지2', '이미지3', '이미지4', '이미지5', '이미지6', '이미지7', '이미지8', '이미지9', '이미지10'
+                ];
+
+                const excelData = [headers];
+
+                jsonData.forEach((item, index) => {
+                    const rawPrice = this.extractPriceFromContent(item.content || '');
+                    const costPrice = rawPrice ? this.convertToWon(rawPrice) : 0;
+                    const sellingPrice = rawPrice ? this.calculateSellingPrice(costPrice, marginRate) : 0;
+
+                    const fullProductName = this.extractProductName(item.content || '');
+                    const productName = this.limitStringByBytes(fullProductName, 50);
+
+                    const cleanDescription = item.content ? item.content.replace(/<[^>]*>/g, '').trim() : '';
+
+                    const imageUrls = [];
+                    if (item.content) {
+                        const imgRegex = /src="([^"]+)"/g;
+                        let match;
+                        while ((match = imgRegex.exec(item.content)) !== null && imageUrls.length < 10) {
+                            imageUrls.push(match[1]);
+                        }
+                    }
+
+                    const rowData = [
+                        `PRODUCT_${String(index + 1).padStart(4, '0')}`,
+                        '10',
+                        '', '', 
+                        productName,
+                        '', '국내', '', '',
+                        '0', '0', '0', '0', '0',
+                        productName,
+                        cleanDescription,
+                        cleanDescription,
+                        costPrice,      // 시중가격 (판매원가)
+                        sellingPrice,   // 판매가격 (40% 마진)
+                        '0', '', '1', '',
+                        '1', '999', '0', '1', '10', '0',
+                        index + 1,
+                        ...imageUrls,
+                        ...Array(10 - imageUrls.length).fill('')
+                    ];
+
+                    excelData.push(rowData);
+                });
+
+                return excelData;
+            }
+        }
+
+        // 전역 변수
+        let jsonData = null;
+        let lastExcelData = null;
+        let lastFilename = null;
+        const priceParser = new PriceParser();
+
+        // 파일 업로드 이벤트
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+        
+        // 드래그 앤 드롭
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.json')) {
+                showAlert('JSON 파일만 업로드 가능합니다.', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    jsonData = JSON.parse(e.target.result);
+                    showAlert(`✅ ${file.name} 파일이 성공적으로 로드되었습니다. (${jsonData.length}개 상품)`, 'success');
+                    document.getElementById('convertBtn').disabled = false;
+                    showPreview(jsonData.slice(0, 3)); // 처음 3개 상품 미리보기
+                } catch (error) {
+                    showAlert('❌ JSON 파일 형식이 올바르지 않습니다.', 'error');
+                    console.error('JSON 파싱 오류:', error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function showAlert(message, type) {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function showPreview(data) {
+            const preview = document.getElementById('preview');
+            const content = document.getElementById('previewContent');
+            const marginRate = parseFloat(document.getElementById('marginRate').value) / 100;
+            
+            content.innerHTML = '';
+            
+            data.forEach((item, index) => {
+                const rawPrice = priceParser.extractPriceFromContent(item.content || '');
+                const costPrice = rawPrice ? priceParser.convertToWon(rawPrice) : 0;
+                const sellingPrice = rawPrice ? priceParser.calculateSellingPrice(costPrice, marginRate) : 0;
+                const productName = priceParser.limitStringByBytes(priceParser.extractProductName(item.content || ''), 50);
+                
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                previewItem.innerHTML = `
+                    <strong>${productName || '상품명 없음'}</strong>
+                    <div class="price-info">
+                        <div class="price-box">
+                            <small>원시 가격</small>
+                            <strong>${rawPrice || 'N/A'}</strong>
+                        </div>
+                        <div class="price-box">
+                            <small>시중가격 (판매원가)</small>
+                            <strong>${costPrice.toLocaleString()}원</strong>
+                        </div>
+                        <div class="price-box">
+                            <small>판매가격 (+${(marginRate*100).toFixed(1)}%)</small>
+                            <strong>${sellingPrice.toLocaleString()}원</strong>
+                        </div>
+                    </div>
+                `;
+                content.appendChild(previewItem);
+            });
+            
+            if (jsonData.length > 3) {
+                const moreInfo = document.createElement('p');
+                moreInfo.innerHTML = `<strong>... 외 ${jsonData.length - 3}개 상품 더</strong>`;
+                moreInfo.style.textAlign = 'center';
+                moreInfo.style.color = '#667eea';
+                moreInfo.style.marginTop = '20px';
+                content.appendChild(moreInfo);
+            }
+            
+            preview.style.display = 'block';
+        }
+
+        function downloadExcelFile(workbook, filename) {
+            try {
+                // 방법 1: XLSX.writeFile (표준 방법)
+                XLSX.writeFile(workbook, filename);
+                return true;
+            } catch (error) {
+                console.log('XLSX.writeFile 실패, 대체 방법 사용:', error);
+                
+                try {
+                    // 방법 2: Blob을 사용한 수동 다운로드
+                    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    
+                    // 다운로드 링크 생성
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    
+                    // 임시로 DOM에 추가하고 클릭
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    // 정리
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    
+                    return true;
+                } catch (blobError) {
+                    console.error('Blob 다운로드도 실패:', blobError);
+                    return false;
+                }
+            }
+        }
+
+        function convertToExcel() {
+            if (!jsonData) {
+                showAlert('먼저 JSON 파일을 업로드하세요.', 'error');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const convertBtn = document.getElementById('convertBtn');
+            const downloadSection = document.getElementById('downloadSection');
+            
+            loading.style.display = 'block';
+            convertBtn.disabled = true;
+            downloadSection.style.display = 'none';
+
+            setTimeout(() => {
+                try {
+                    const marginRate = parseFloat(document.getElementById('marginRate').value) / 100;
+                    let filename = document.getElementById('filename').value || 'products.xlsx';
+                    
+                    // 파일명에 .xlsx 확장자가 없으면 추가
+                    if (!filename.toLowerCase().endsWith('.xlsx')) {
+                        filename += '.xlsx';
+                    }
+                    
+                    const excelData = priceParser.convertToExcelFormat(jsonData, marginRate);
+                    
+                    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
+                    
+                    // 다운로드 실행 (여러 방법 시도)
+                    const downloadSuccess = downloadExcelFile(workbook, filename);
+                    
+                    if (downloadSuccess) {
+                        // 나중에 다시 다운로드할 수 있도록 저장
+                        lastExcelData = excelData;
+                        lastFilename = filename;
+                        
+                        showAlert(`✅ ${filename} 파일 다운로드가 완료되었습니다! (${jsonData.length}개 상품)`, 'success');
+                        downloadSection.style.display = 'block';
+                        
+                        // 컨버트 버튼 텍스트 변경
+                        convertBtn.innerHTML = '🔄 다시 변환 및 다운로드';
+                    } else {
+                        showAlert('❌ 다운로드에 실패했습니다. 브라우저 설정을 확인해주세요.', 'error');
+                    }
+                    
+                } catch (error) {
+                    showAlert('❌ Excel 변환 중 오류가 발생했습니다.', 'error');
+                    console.error('변환 오류:', error);
+                } finally {
+                    loading.style.display = 'none';
+                    convertBtn.disabled = false;
+                }
+            }, 500);
+        }
+
+        function downloadAgain() {
+            if (!lastExcelData || !lastFilename) {
+                showAlert('다운로드할 파일이 없습니다. 먼저 변환을 진행하세요.', 'error');
+                return;
+            }
+
+            try {
+                const worksheet = XLSX.utils.aoa_to_sheet(lastExcelData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
+                
+                const downloadSuccess = downloadExcelFile(workbook, lastFilename);
+                
+                if (downloadSuccess) {
+                    showAlert(`✅ ${lastFilename} 파일을 다시 다운로드했습니다!`, 'success');
+                } else {
+                    showAlert('❌ 다운로드에 실패했습니다.', 'error');
+                }
+            } catch (error) {
+                showAlert('❌ 다운로드 중 오류가 발생했습니다.', 'error');
+                console.error('다운로드 오류:', error);
+            }
+        }
+
+        function forceDownload() {
+            if (!lastExcelData || !lastFilename) {
+                showAlert('다운로드할 파일이 없습니다. 먼저 변환을 진행하세요.', 'error');
+                return;
+            }
+
+            try {
+                const worksheet = XLSX.utils.aoa_to_sheet(lastExcelData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "상품목록");
+                
+                // 강제로 Blob 방식 사용
+                const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([excelBuffer], { 
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                });
+                
+                // URL 생성 및 다운로드
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = lastFilename;
+                link.style.display = 'none';
+                
+                // 강제 클릭
+                document.body.appendChild(link);
+                link.click();
+                
+                // 정리
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+                
+                showAlert(`✅ ${lastFilename} 강제 다운로드 완료!`, 'success');
+                
+            } catch (error) {
+                showAlert('❌ 강제 다운로드도 실패했습니다. 브라우저를 확인해주세요.', 'error');
+                console.error('강제 다운로드 오류:', error);
+                
+                // 최후의 수단: 사용자에게 수동으로 복사할 수 있도록 데이터 표시
+                alert('다운로드에 실패했습니다. 브라우저의 다운로드 차단을 해제하거나 다른 브라우저를 시도해보세요.');
+            }
+        }
+    </script>
+</body>
+</html>
