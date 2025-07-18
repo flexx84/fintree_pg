@@ -1,5 +1,5 @@
 **2. vite.config.ts**
-```ts
+ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
