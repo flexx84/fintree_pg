@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>통합 상품 데이터 변환기 - AWS S3 + GPT API</title>
+    <title>통합 상품 데이터 변환기 - AWS S3 + GPT API (최적화)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.1471.0/aws-sdk.min.js"></script>
     <style>
@@ -165,77 +165,58 @@
             transition: all 0.3s;
         }
         
-        .upload-section:hover {
-            background: #e6f3ff;
-            border-color: #2980b9;
-        }
-        
-        .upload-section.dragover {
-            background: #d4edda;
-            border-color: #28a745;
-        }
-        
         .file-input {
             display: none;
+        }
+        
+        .upload-btn, .process-btn, .download-btn, .save-btn {
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
         }
         
         .upload-btn {
             background: linear-gradient(135deg, #3498db, #2980b9);
             color: white;
             padding: 15px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
             margin: 10px;
-        }
-        
-        .upload-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
         }
         
         .process-btn {
             background: linear-gradient(135deg, #27ae60, #2ecc71);
             color: white;
             padding: 15px 40px;
-            border: none;
-            border-radius: 10px;
             font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
             width: 100%;
             margin-top: 20px;
         }
         
-        .process-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
-        }
-        
-        .process-btn:disabled {
-            background: #bdc3c7;
-            cursor: not-allowed;
-            transform: none;
+        .download-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 15px 30px;
+            margin: 10px;
         }
         
         .save-btn {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
             padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
             font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
             margin-left: 10px;
         }
         
-        .save-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+        .upload-btn:hover, .process-btn:hover, .download-btn:hover, .save-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .process-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .progress-section {
@@ -318,21 +299,6 @@
             color: #34495e;
         }
         
-        .preview-images {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .preview-image {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 2px solid #ddd;
-        }
-        
         .preview-table {
             width: 100%;
             border-collapse: collapse;
@@ -356,7 +322,6 @@
             word-wrap: break-word;
         }
         
-        /* 모달 스타일 */
         .modal {
             display: none;
             position: fixed;
@@ -388,21 +353,11 @@
             border-bottom: 2px solid #eee;
         }
         
-        .modal-title {
-            font-size: 1.5rem;
-            color: #2c3e50;
-        }
-        
         .close {
             color: #aaa;
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
-        }
-        
-        .close:hover,
-        .close:focus {
-            color: #000;
         }
         
         .download-section {
@@ -412,23 +367,6 @@
             margin-top: 25px;
             text-align: center;
             display: none;
-        }
-        
-        .download-btn {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin: 10px;
-        }
-        
-        .download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
         }
         
         .button-group {
@@ -472,17 +410,13 @@
             .tab-container {
                 flex-direction: column;
             }
-            
-            .tab-button {
-                text-align: left;
-            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 통합 상품 데이터 변환기</h1>
+            <h1>🚀 통합 상품 데이터 변환기 (최적화)</h1>
             <p>AWS S3 이미지 업로드 + GPT API 텍스트 변환 + Excel 생성 솔루션</p>
         </div>
         
@@ -546,10 +480,6 @@
                 <div class="config-section">
                     <h3>🔧 처리 옵션</h3>
                     <div class="checkbox-group">
-                        <input type="checkbox" id="skipImageUpload">
-                        <label for="skipImageUpload">이미지 업로드 제외 (원본 URL 매핑만 사용)</label>
-                    </div>
-                    <div class="checkbox-group">
                         <input type="checkbox" id="optimizeImages" checked>
                         <label for="optimizeImages">이미지 최적화 (크기 조정 및 압축)</label>
                     </div>
@@ -562,8 +492,8 @@
                         <label for="generateProductNames">AI 상품명 자동 생성</label>
                     </div>
                     <div class="checkbox-group">
-                        <input type="checkbox" id="convertToWebp" checked>
-                        <label for="convertToWebp">🎯 네이버 CORS 우회 WebP 변환 + AWS 업로드 (권장)</label>
+                        <input type="checkbox" id="retryFailedUploads" checked>
+                        <label for="retryFailedUploads">🔄 업로드 실패 시 재시도 (3회)</label>
                     </div>
                 </div>
                 
@@ -709,7 +639,7 @@
         let processedImageCount = 0;
         let totalItems = 0;
         let currentItem = 0;
-        let currentMode = 'excel'; // 'excel' or 'text'
+        let currentMode = 'excel';
         
         // 기본 프롬프트
         const DEFAULT_PROMPT = `입력 텍스트의 내용을 지정된 형식으로 변환해줘.
@@ -727,147 +657,94 @@
 지역번호 예를들어 02,051,031등 모든 번호로 시작하는 번호는 카카오톡 ebuy114 로 변경해줘.
 텔레그램 뒤 영문으로 시작하는 부분은 카카오톡 ebuy114 로 변경해줘.
 카카오톡 뒤 영문으로 시작하는 부분은 카카오톡 ebuy114 로 변경해줘.
-이외 모든 전화번호,문자,연락처로 보이는 부분은 카카오톡 ebuy114 로 변경해줘.
-문자, 휴대폰, 전화번호 라는 단어는 삭제해줘.
-"010 **** ****" 형식은 모두 삭제해줘.
-제품에 대한 설명과 배송에대한 설명을 제외한 모든 글은 삭제해줘, 대체문장은 "문의사항은 카카오톡 ebuy114으로 연락주시길 바랍니다." 로 변경해줘`;
-        
+이외 모든 전화번호,문자,연락처로 보이는 부분은 카카오톡 ebuy114 로 변경해줘.`;
+
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
             loadSavedSettings();
-            setupEventListeners();
-            addLog('info', '통합 상품 데이터 변환기가 준비되었습니다');
+            setDefaultPrompt();
         });
-        
-        // 탭 전환
-        function switchTab(mode) {
-            // 탭 버튼 활성화 상태 변경
-            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+
+        // 이벤트 리스너 초기화
+        function initializeEventListeners() {
+            // JSON 파일 업로드
+            document.getElementById('jsonFile').addEventListener('change', handleJsonFileSelect);
             
-            // 탭 컨텐츠 표시/숨김
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            document.getElementById(mode).classList.add('active');
+            // 이미지 파일 업로드 (텍스트 모드)
+            document.getElementById('imageFiles').addEventListener('change', handleImageFileSelect);
             
-            currentMode = mode === 'excel-mode' ? 'excel' : 'text';
-            addLog('info', `${mode === 'excel-mode' ? 'Excel 변환' : '텍스트 변환'} 모드로 전환되었습니다`);
-        }
-        
-        // 이벤트 리스너 설정
-        function setupEventListeners() {
-            // JSON 파일 선택 이벤트
-            document.getElementById('jsonFile').addEventListener('change', handleJsonFile);
-            
-            // 이미지 파일 선택 이벤트 (텍스트 모드)
-            document.getElementById('imageFiles').addEventListener('change', handleImageSelection);
-            
-            // 드래그 앤 드롭 이벤트
-            setupDragAndDrop('uploadSectionExcel', 'json');
-            setupDragAndDrop('uploadSectionText', 'image');
-        }
-        
-        // 드래그 앤 드롭 설정
-        function setupDragAndDrop(elementId, fileType) {
-            const element = document.getElementById(elementId);
-            
-            element.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                this.classList.add('dragover');
-            });
-            
-            element.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                this.classList.remove('dragover');
-            });
-            
-            element.addEventListener('drop', function(e) {
-                e.preventDefault();
-                this.classList.remove('dragover');
-                
-                const files = e.dataTransfer.files;
-                if (files.length > 0) {
-                    if (fileType === 'json' && files[0].type === 'application/json') {
-                        document.getElementById('jsonFile').files = files;
-                        handleJsonFile({ target: { files: files } });
-                    } else if (fileType === 'image' && files[0].type.startsWith('image/')) {
-                        document.getElementById('imageFiles').files = files;
-                        handleImageSelection({ target: { files: files } });
-                    }
+            // 모달 외부 클릭 시 닫기
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('resultModal');
+                if (event.target === modal) {
+                    closeModal();
                 }
             });
         }
-        
+
         // 저장된 설정 불러오기
         function loadSavedSettings() {
+            const savedPrompt = localStorage.getItem('gpt_prompt');
             const savedApiKey = localStorage.getItem('openai_api_key');
-            const savedPrompt = localStorage.getItem('conversion_prompt');
-            const savedAwsSettings = JSON.parse(localStorage.getItem('aws_settings') || '{}');
+            const savedAwsKey = localStorage.getItem('aws_access_key');
             
+            if (savedPrompt) document.getElementById('promptText').value = savedPrompt;
             if (savedApiKey) {
                 document.getElementById('apiKey').value = savedApiKey;
                 document.getElementById('excelApiKey').value = savedApiKey;
-                addLog('success', 'API 키가 자동으로 불러와졌습니다');
             }
-            
-            if (savedPrompt) {
-                document.getElementById('promptText').value = savedPrompt;
-                addLog('success', '저장된 프롬프트가 자동으로 불러와졌습니다');
-            } else {
+            if (savedAwsKey) document.getElementById('awsAccessKey').value = savedAwsKey;
+        }
+
+        // 기본 프롬프트 설정
+        function setDefaultPrompt() {
+            if (!document.getElementById('promptText').value) {
                 document.getElementById('promptText').value = DEFAULT_PROMPT;
             }
-            
-            if (savedAwsSettings.accessKey) {
-                document.getElementById('awsAccessKey').value = savedAwsSettings.accessKey;
-                document.getElementById('awsSecretKey').value = savedAwsSettings.secretKey;
-                document.getElementById('bucketName').value = savedAwsSettings.bucketName;
-                document.getElementById('region').value = savedAwsSettings.region;
-                addLog('success', 'AWS 설정이 자동으로 불러와졌습니다');
-            }
         }
-        
-        // AWS 설정 저장
+
+        // 탭 전환
+        function switchTab(tabName) {
+            // 모든 탭 버튼 비활성화
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // 선택된 탭 활성화
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            currentMode = tabName === 'excel-mode' ? 'excel' : 'text';
+        }
+
+        // 설정 저장 함수들
         function saveAwsSettings() {
-            const settings = {
-                accessKey: document.getElementById('awsAccessKey').value.trim(),
-                secretKey: document.getElementById('awsSecretKey').value.trim(),
-                bucketName: document.getElementById('bucketName').value.trim(),
-                region: document.getElementById('region').value
-            };
-            
-            if (settings.accessKey && settings.secretKey && settings.bucketName) {
-                localStorage.setItem('aws_settings', JSON.stringify(settings));
+            const accessKey = document.getElementById('awsAccessKey').value;
+            if (accessKey) {
+                localStorage.setItem('aws_access_key', accessKey);
                 addLog('success', 'AWS 설정이 저장되었습니다');
-            } else {
-                addLog('warning', 'AWS 설정 정보를 모두 입력해주세요');
             }
         }
-        
-        // API 키 저장
+
         function saveApiKey() {
-            const apiKey = document.getElementById('apiKey').value.trim();
+            const apiKey = document.getElementById('apiKey').value;
             if (apiKey) {
                 localStorage.setItem('openai_api_key', apiKey);
-                document.getElementById('excelApiKey').value = apiKey; // Excel 모드에도 동기화
+                document.getElementById('excelApiKey').value = apiKey; // 동기화
                 addLog('success', 'API 키가 저장되었습니다');
-            } else {
-                addLog('warning', 'API 키를 입력해주세요');
             }
         }
-        
-        // 프롬프트 저장
+
         function savePrompt() {
-            const prompt = document.getElementById('promptText').value.trim();
+            const prompt = document.getElementById('promptText').value;
             if (prompt) {
-                localStorage.setItem('conversion_prompt', prompt);
+                localStorage.setItem('gpt_prompt', prompt);
                 addLog('success', '프롬프트가 저장되었습니다');
-            } else {
-                addLog('warning', '프롬프트를 입력해주세요');
             }
         }
-        
-        // 저장된 프롬프트 불러오기
+
         function loadPrompt() {
-            const savedPrompt = localStorage.getItem('conversion_prompt');
+            const savedPrompt = localStorage.getItem('gpt_prompt');
             if (savedPrompt) {
                 document.getElementById('promptText').value = savedPrompt;
                 addLog('success', '저장된 프롬프트를 불러왔습니다');
@@ -875,15 +752,14 @@
                 addLog('warning', '저장된 프롬프트가 없습니다');
             }
         }
-        
-        // 기본 프롬프트 복원
+
         function resetPrompt() {
             document.getElementById('promptText').value = DEFAULT_PROMPT;
-            addLog('info', '기본 프롬프트로 복원되었습니다');
+            addLog('success', '기본 프롬프트로 복원되었습니다');
         }
-        
-        // JSON 파일 처리
-        function handleJsonFile(event) {
+
+        // 파일 선택 핸들러들
+        function handleJsonFileSelect(event) {
             const file = event.target.files[0];
             if (file) {
                 document.getElementById('fileNameExcel').textContent = `선택된 파일: ${file.name}`;
@@ -892,20 +768,17 @@
                 reader.onload = function(e) {
                     try {
                         jsonData = JSON.parse(e.target.result);
-                        addLog('success', `JSON 파일 로드 완료: ${jsonData.length}개 상품`);
                         document.getElementById('processBtnExcel').disabled = false;
+                        addLog('success', `JSON 파일 로드 완료: ${jsonData.length}개 상품 데이터`);
                         
                         // 총 이미지 수 계산
-                        totalImages = 0;
-                        jsonData.forEach(item => {
-                            if (item.images && Array.isArray(item.images)) {
-                                totalImages += item.images.length;
-                            }
-                        });
-                        addLog('info', `총 ${totalImages}개 이미지 발견`);
+                        totalImages = jsonData.reduce((count, item) => {
+                            return count + (item.images ? item.images.length : 0);
+                        }, 0);
+                        addLog('info', `총 이미지 수: ${totalImages}개`);
                         
                     } catch (error) {
-                        addLog('error', `JSON 파일 파싱 실패: ${error.message}`);
+                        addLog('error', `JSON 파싱 오류: ${error.message}`);
                         jsonData = null;
                         document.getElementById('processBtnExcel').disabled = true;
                     }
@@ -913,117 +786,203 @@
                 reader.readAsText(file);
             }
         }
-        
+
+        function handleImageFileSelect(event) {
+            const files = Array.from(event.target.files);
+            if (files.length > 0) {
+                processedImages = [];
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = '<h4>선택된 이미지:</h4>';
+                
+                files.forEach((file, index) => {
+                    // 이미지 미리보기 생성
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.style.width = '100px';
+                    img.style.height = '100px';
+                    img.style.objectFit = 'cover';
+                    img.style.margin = '5px';
+                    img.style.borderRadius = '8px';
+                    preview.appendChild(img);
+                    
+                    // WebP 변환
+                    convertToWebP(file, `image_${index + 1}.webp`);
+                });
+                
+                addLog('success', `${files.length}개 이미지 선택됨`);
+            }
+        }
+
         // 일괄 처리 모드 토글
         function toggleBatchMode() {
             const batchMode = document.getElementById('batchMode').checked;
             const inputText = document.getElementById('inputText');
             
             if (batchMode) {
-                inputText.placeholder = '여러 상품 정보를 구분자(예: ----)로 분리하여 입력하세요...';
-                addLog('info', '일괄 처리 모드가 활성화되었습니다');
+                inputText.placeholder = '여러 상품 정보를 ---- 로 구분하여 입력하세요\n\n상품1 정보...\n----\n상품2 정보...\n----\n상품3 정보...';
             } else {
                 inputText.placeholder = '변환할 상품 정보를 입력하세요...';
-                addLog('info', '단일 처리 모드로 변경되었습니다');
             }
         }
-        
-        // 이미지 선택 처리 (텍스트 모드)
-        function handleImageSelection(event) {
-            const files = event.target.files;
-            if (files.length > 0) {
-                addLog('info', `${files.length}개 이미지가 선택되었습니다`);
-                processImagesForText(files);
-            }
-        }
-        
-        // 텍스트 모드용 이미지 처리
-        async function processImagesForText(files) {
-            const preview = document.getElementById('imagePreview');
-            preview.innerHTML = '<h4>이미지 변환 중...</h4>';
+
+        // AWS S3 클라이언트 초기화 (개선된 오류 처리)
+        function initializeS3Client() {
+            const accessKey = document.getElementById('awsAccessKey').value.trim();
+            const secretKey = document.getElementById('awsSecretKey').value.trim();
+            const region = document.getElementById('region').value;
             
-            processedImages = [];
-            
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                try {
-                    const webpImage = await convertToWebP(file);
-                    processedImages.push({
-                        blob: webpImage,
-                        name: `image_${i + 1}.webp`
-                    });
-                    addLog('success', `${file.name} → WebP 변환 완료`);
-                } catch (error) {
-                    addLog('error', `${file.name} 변환 실패: ${error.message}`);
-                }
+            if (!accessKey || !secretKey) {
+                addLog('error', 'AWS 인증 정보를 모두 입력해주세요');
+                return false;
             }
             
-            displayImagePreview();
+            try {
+                AWS.config.update({
+                    accessKeyId: accessKey,
+                    secretAccessKey: secretKey,
+                    region: region,
+                    maxRetries: 3,
+                    retryDelayOptions: { base: 300 }
+                });
+                
+                s3Client = new AWS.S3({
+                    params: { Bucket: document.getElementById('bucketName').value.trim() }
+                });
+                
+                addLog('success', 'AWS S3 클라이언트 초기화 완료');
+                return true;
+            } catch (error) {
+                addLog('error', `AWS 초기화 실패: ${error.message}`);
+                return false;
+            }
         }
-        
+
         // 이미지를 WebP로 변환
-        function convertToWebP(file) {
-            return new Promise((resolve, reject) => {
+        async function convertToWebP(file, filename) {
+            return new Promise((resolve) => {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 const img = new Image();
                 
                 img.onload = function() {
-                    // 이미지 크기 조정 (최대 1200px)
-                    const maxSize = 1200;
+                    // 이미지 최적화 옵션
+                    const maxWidth = 1200;
+                    const maxHeight = 1200;
                     let { width, height } = img;
                     
-                    if (width > maxSize || height > maxSize) {
-                        if (width > height) {
-                            height = (height * maxSize) / width;
-                            width = maxSize;
-                        } else {
-                            width = (width * maxSize) / height;
-                            height = maxSize;
-                        }
+                    // 크기 조정
+                    if (width > maxWidth || height > maxHeight) {
+                        const ratio = Math.min(maxWidth / width, maxHeight / height);
+                        width *= ratio;
+                        height *= ratio;
                     }
                     
                     canvas.width = width;
                     canvas.height = height;
                     
+                    // 이미지 그리기
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    canvas.toBlob(resolve, 'image/webp', 0.8);
+                    // WebP로 변환 (품질 85%)
+                    canvas.toBlob((blob) => {
+                        processedImages.push({
+                            name: filename,
+                            blob: blob,
+                            originalName: file.name
+                        });
+                        resolve(blob);
+                    }, 'image/webp', 0.85);
                 };
                 
-                img.onerror = reject;
                 img.src = URL.createObjectURL(file);
             });
         }
-        
-        // 이미지 미리보기 표시
-        function displayImagePreview() {
-            const preview = document.getElementById('imagePreview');
-            preview.innerHTML = '<h4>변환된 이미지 미리보기</h4>';
+
+        // 개선된 S3 업로드 함수 (재시도 로직 포함)
+        async function uploadImageToS3(imageUrl, filename, maxRetries = 3) {
+            if (!s3Client) {
+                throw new Error('S3 클라이언트가 초기화되지 않았습니다');
+            }
             
-            const imageContainer = document.createElement('div');
-            imageContainer.className = 'preview-images';
+            let lastError;
             
-            processedImages.forEach((item, index) => {
-                const img = document.createElement('img');
-                img.className = 'preview-image';
-                img.src = URL.createObjectURL(item.blob);
-                img.title = `변환된 이미지 ${index + 1}`;
-                imageContainer.appendChild(img);
-            });
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    addLog('info', `이미지 업로드 시도 ${attempt}/${maxRetries}: ${filename}`);
+                    
+                    // 이미지 다운로드
+                    const response = await fetch(imageUrl);
+                    if (!response.ok) {
+                        throw new Error(`이미지 다운로드 실패: ${response.status}`);
+                    }
+                    
+                    const imageBlob = await response.blob();
+                    
+                    // WebP로 변환
+                    const webpBlob = await convertBlobToWebP(imageBlob);
+                    
+                    // S3 업로드 파라미터
+                    const uploadParams = {
+                        Bucket: document.getElementById('bucketName').value.trim(),
+                        Key: `products/${filename}`,
+                        Body: webpBlob,
+                        ContentType: 'image/webp',
+                        ACL: 'public-read'
+                    };
+                    
+                    // S3 업로드 실행
+                    const result = await s3Client.upload(uploadParams).promise();
+                    addLog('success', `S3 업로드 성공: ${filename}`);
+                    
+                    return result.Location;
+                    
+                } catch (error) {
+                    lastError = error;
+                    addLog('warning', `업로드 시도 ${attempt} 실패: ${error.message}`);
+                    
+                    if (attempt < maxRetries) {
+                        // 재시도 전 대기 (지수 백오프)
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            }
             
-            preview.appendChild(imageContainer);
-            addLog('success', `${processedImages.length}개 이미지 미리보기 생성 완료`);
+            // 모든 재시도 실패
+            addLog('error', `이미지 업로드 최종 실패: ${filename} - ${lastError.message}`);
+            throw lastError;
         }
-        
+
+        // Blob을 WebP로 변환
+        async function convertBlobToWebP(blob) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    canvas.toBlob((webpBlob) => {
+                        resolve(webpBlob);
+                    }, 'image/webp', 0.85);
+                };
+                
+                img.src = URL.createObjectURL(blob);
+            });
+        }
+
         // Excel 모드 처리 시작
         async function startExcelProcessing() {
-            if (!jsonData) {
-                alert('JSON 파일을 먼저 선택해주세요');
+            if (!jsonData || jsonData.length === 0) {
+                alert('JSON 파일을 먼저 업로드해주세요');
                 return;
             }
             
             if (!initializeS3Client()) {
+                alert('AWS S3 설정을 확인해주세요');
                 return;
             }
             
@@ -1031,36 +990,27 @@
             document.getElementById('processBtnExcel').disabled = true;
             document.getElementById('progressSection').style.display = 'block';
             document.getElementById('logSection').style.display = 'block';
+            imageMapping.clear();
+            processedImageCount = 0;
             
             try {
-                // 옵션 읽기
-                const skipImageUpload = document.getElementById('skipImageUpload').checked;
-                const optimizeImages = document.getElementById('optimizeImages').checked;
-                const useAsyncUpload = document.getElementById('useAsyncUpload').checked;
-                const generateProductNames = document.getElementById('generateProductNames').checked;
-                const convertToWebp = document.getElementById('convertToWebp').checked;
-                const useGptEnhancement = document.getElementById('useGptEnhancement').checked;
+                updateProgress(0, 'S3 이미지 업로드 시작...');
+                addLog('info', `${jsonData.length}개 상품, ${totalImages}개 이미지 처리 시작`);
                 
-                updateProgress(0, '처리 시작...');
+                // 1단계: 이미지 업로드
+                await uploadAllImages();
                 
-                // 강제로 모든 이미지 업로드 (skipImageUpload 무시)
-                if (skipImageUpload) {
-                    addLog('warning', '⚠️ 이미지 업로드 제외 옵션이 체크되어 있지만, 모든 이미지를 AWS에 업로드합니다');
-                }
-                
-                updateProgress(10, '🚀 모든 이미지 AWS 업로드 시작...');
-                await uploadAllImages(useAsyncUpload, optimizeImages, true); // 강제 WebP 변환
-                
+                // 2단계: Excel 데이터 생성
                 updateProgress(80, 'Excel 데이터 생성 중...');
-                await generateExcelData(generateProductNames, useGptEnhancement);
-                
-                updateProgress(95, '미리보기 생성 중...');
-                showExcelPreview();
+                const useGptEnhancement = document.getElementById('useGptEnhancement').checked;
+                const generateNames = document.getElementById('generateProductNames').checked;
+                await generateExcelData(generateNames, useGptEnhancement);
                 
                 updateProgress(100, '처리 완료!');
+                showExcelPreview();
                 showExcelDownload();
                 
-                addLog('success', '✅ 모든 처리가 완료되었습니다!');
+                addLog('success', '모든 처리가 완료되었습니다!');
                 
             } catch (error) {
                 addLog('error', `처리 실패: ${error.message}`);
@@ -1069,7 +1019,223 @@
                 document.getElementById('processBtnExcel').disabled = false;
             }
         }
-        
+
+        // 모든 이미지 업로드
+        async function uploadAllImages() {
+            const useAsync = document.getElementById('useAsyncUpload').checked;
+            const retryEnabled = document.getElementById('retryFailedUploads').checked;
+            const maxRetries = retryEnabled ? 3 : 1;
+            
+            const allImages = [];
+            
+            // 모든 이미지 URL 수집
+            jsonData.forEach((item, itemIndex) => {
+                if (item.images && item.images.length > 0) {
+                    item.images.forEach((imageUrl, imageIndex) => {
+                        allImages.push({
+                            url: imageUrl,
+                            filename: `product_${itemIndex + 1}_image_${imageIndex + 1}.webp`,
+                            itemIndex,
+                            imageIndex
+                        });
+                    });
+                }
+            });
+            
+            if (useAsync) {
+                // 병렬 업로드 (배치 크기 5)
+                const batchSize = 5;
+                for (let i = 0; i < allImages.length; i += batchSize) {
+                    const batch = allImages.slice(i, i + batchSize);
+                    const promises = batch.map(img => 
+                        uploadImageToS3(img.url, img.filename, maxRetries)
+                            .then(s3Url => {
+                                imageMapping.set(img.url, s3Url);
+                                processedImageCount++;
+                            })
+                            .catch(error => {
+                                addLog('error', `업로드 실패: ${img.filename}`);
+                            })
+                    );
+                    
+                    await Promise.allSettled(promises);
+                    
+                    const progress = 70 * (i + batchSize) / allImages.length;
+                    updateProgress(progress, `이미지 업로드 중... ${Math.min(i + batchSize, allImages.length)}/${allImages.length}`);
+                }
+            } else {
+                // 순차 업로드
+                for (let i = 0; i < allImages.length; i++) {
+                    const img = allImages[i];
+                    
+                    try {
+                        const s3Url = await uploadImageToS3(img.url, img.filename, maxRetries);
+                        imageMapping.set(img.url, s3Url);
+                        processedImageCount++;
+                    } catch (error) {
+                        addLog('error', `업로드 실패: ${img.filename}`);
+                    }
+                    
+                    const progress = 70 * (i + 1) / allImages.length;
+                    updateProgress(progress, `이미지 업로드 중... ${i + 1}/${allImages.length}`);
+                }
+            }
+            
+            addLog('success', `이미지 업로드 완료: ${processedImageCount}/${totalImages}`);
+        }
+
+        // Excel 데이터 생성 (40개 컬럼 업로드 양식)
+        async function generateExcelData(generateNames, useGptEnhancement) {
+            processedData = [];
+            
+            for (let index = 0; index < jsonData.length; index++) {
+                const item = jsonData[index];
+                
+                if (!item.content) continue;
+                
+                let productName = generateNames ? generateProductName(item.content) : `상품 ${index + 1}`;
+                let content = item.content;
+                let cleanedContent = removeDecimalNumbers(content);
+                
+                // GPT 개선 옵션
+                if (useGptEnhancement) {
+                    const apiKey = document.getElementById('excelApiKey').value.trim();
+                    if (apiKey) {
+                        try {
+                            const prompt = document.getElementById('promptText').value.trim();
+                            const enhancedContent = await convertText(cleanedContent, prompt, apiKey);
+                            cleanedContent = enhancedContent;
+                            addLog('success', `상품 ${index + 1} GPT 개선 완료`);
+                        } catch (error) {
+                            addLog('warning', `상품 ${index + 1} GPT 개선 실패: ${error.message}`);
+                        }
+                    }
+                }
+                
+                // 가격 추출 (97.0 → 970000)
+                const marketPrice = extractPriceFromJson(content);
+                const salePrice = Math.round(marketPrice * 1.4);
+                
+                // 설명 생성
+                const basicDescription = cleanDescription(cleanedContent);
+                const productDescription = createProductDescriptionWithS3Html(cleanedContent, item.images || []);
+                const mobileDescription = createMobileDescriptionWithS3Html(cleanedContent, item.images || []);
+                
+                // S3 이미지 URL 배열 (최대 10개)
+                const s3ImageUrls = getS3ImageUrls(item.images || []);
+                
+                // 40개 컬럼 업로드 양식
+                const excelRow = {
+                    '': '',
+                    '기본분류': '10',
+                    '분류2': '',
+                    '분류3': '',
+                    '상품명': productName,
+                    '제조사': '',
+                    '원산지': '국내',
+                    '브랜드': extractBrand(cleanedContent),
+                    '모델': '',
+                    '상품유형1': '0',
+                    '상품유형2': '0',
+                    '상품유형3': '0',
+                    '상품유형4': '0',
+                    '상품유형5': '0',
+                    '기본설명': basicDescription,
+                    '상품설명': productDescription,
+                    '모바일상품설명': mobileDescription,
+                    '시중가격': marketPrice,
+                    '판매가격': salePrice,
+                    '전화문의': '0',
+                    '포인트': '',
+                    '포인트타입': '1',
+                    '판매자이메일': '',
+                    '판매가능': '1',
+                    '재고수량': '999',
+                    '재고통보수량': '0',
+                    '최소구매수량': '1',
+                    '최대구매수량': '10',
+                    '과세유형': '1',
+                    '정렬순서': '',
+                    '이미지1': s3ImageUrls[0] || '',
+                    '이미지2': s3ImageUrls[1] || '',
+                    '이미지3': s3ImageUrls[2] || '',
+                    '이미지4': s3ImageUrls[3] || '',
+                    '이미지5': s3ImageUrls[4] || '',
+                    '이미지6': s3ImageUrls[5] || '',
+                    '이미지7': s3ImageUrls[6] || '',
+                    '이미지8': s3ImageUrls[7] || '',
+                    '이미지9': s3ImageUrls[8] || '',
+                    '이미지10': s3ImageUrls[9] || ''
+                };
+                
+                processedData.push(excelRow);
+            }
+            
+            addLog('success', `${processedData.length}개 상품 데이터 생성 완료`);
+        }
+
+        // S3 이미지 URL 배열 생성 (오직 S3 URL만, 실패 시 빈 문자열)
+        function getS3ImageUrls(originalImages) {
+            const s3Urls = [];
+            
+            for (let i = 0; i < 10; i++) {
+                if (i < originalImages.length) {
+                    const originalUrl = originalImages[i];
+                    const s3Url = imageMapping.get(originalUrl);
+                    
+                    // S3 URL이 있고 실제 S3 URL인지 확인
+                    if (s3Url && s3Url.includes('s3.amazonaws.com')) {
+                        s3Urls.push(s3Url);
+                        addLog('info', `이미지 ${i+1} S3 매핑 성공`);
+                    } else {
+                        // S3 업로드 실패 시 빈 문자열 (원본 URL 폴백 제거)
+                        s3Urls.push('');
+                        addLog('error', `이미지 ${i+1} S3 업로드 실패 - 빈 값으로 처리`);
+                    }
+                } else {
+                    s3Urls.push('');
+                }
+            }
+            
+            return s3Urls;
+        }
+
+        // 상품 설명 생성 (HTML 형식, S3 이미지만 포함)
+        function createProductDescriptionWithS3Html(content, images) {
+            let description = cleanDescription(content);
+            
+            if (images && images.length > 0) {
+                description += '<br><br>';
+                images.forEach(imageUrl => {
+                    const s3Url = imageMapping.get(imageUrl);
+                    // S3 URL만 포함
+                    if (s3Url && s3Url.includes('s3.amazonaws.com')) {
+                        description += `<img src="${s3Url}" style="max-width:100%; height:auto;"><br>`;
+                    }
+                });
+            }
+            
+            return description;
+        }
+
+        // 모바일 상품 설명 생성 (HTML 형식, S3 이미지만 포함)
+        function createMobileDescriptionWithS3Html(content, images) {
+            let mobileDesc = cleanDescription(content);
+            
+            if (images && images.length > 0) {
+                mobileDesc += '<br><br>';
+                images.forEach(imageUrl => {
+                    const s3Url = imageMapping.get(imageUrl);
+                    // S3 URL만 포함
+                    if (s3Url && s3Url.includes('s3.amazonaws.com')) {
+                        mobileDesc += `<img src="${s3Url}" style="max-width:100%; height:auto;"><br>`;
+                    }
+                });
+            }
+            
+            return mobileDesc;
+        }
+
         // 텍스트 모드 처리 시작
         async function startTextConversion() {
             const apiKey = document.getElementById('apiKey').value.trim();
@@ -1133,402 +1299,7 @@
                 document.getElementById('processBtnText').disabled = false;
             }
         }
-        
-        // AWS S3 클라이언트 초기화
-        function initializeS3Client() {
-            const accessKey = document.getElementById('awsAccessKey').value;
-            const secretKey = document.getElementById('awsSecretKey').value;
-            const region = document.getElementById('region').value;
-            
-            if (!accessKey || !secretKey) {
-                addLog('error', 'AWS 인증 정보를 입력해주세요');
-                return false;
-            }
-            
-            AWS.config.update({
-                accessKeyId: accessKey,
-                secretAccessKey: secretKey,
-                region: region
-            });
-            
-            s3Client = new AWS.S3();
-            addLog('success', 'AWS S3 클라이언트 초기화 완료');
-            return true;
-        }
-        
-        // 기존 S3 이미지 매핑 로드
-        async function loadExistingImageMapping() {
-            // 이 함수는 더 이상 사용하지 않음 - 모든 이미지를 새로 업로드
-            addLog('info', '모든 이미지를 새로 업로드합니다 (기존 매핑 로드 스킵)');
-        }
-        
-        // 모든 이미지 업로드
-        async function uploadAllImages(useAsync, optimize, convertWebp) {
-            const bucketName = document.getElementById('bucketName').value;
-            const region = document.getElementById('region').value;
-            
-            // 모든 이미지 URL 수집
-            const allImageUrls = [];
-            jsonData.forEach((item, index) => {
-                if (item.images && Array.isArray(item.images)) {
-                    item.images.forEach(imageUrl => {
-                        allImageUrls.push({
-                            url: imageUrl,
-                            productId: `product_${index}`
-                        });
-                    });
-                }
-            });
-            
-            addLog('info', `${allImageUrls.length}개 이미지 업로드 시작`);
-            
-            if (useAsync) {
-                await uploadImagesAsync(allImageUrls, bucketName, region, optimize, convertWebp);
-            } else {
-                await uploadImagesSync(allImageUrls, bucketName, region, optimize, convertWebp);
-            }
-        }
-        
-        // 비동기 이미지 업로드
-        async function uploadImagesAsync(imageUrls, bucketName, region, optimize, convertWebp) {
-            const batchSize = 10; // 동시 업로드 수 제한
-            const batches = [];
-            
-            for (let i = 0; i < imageUrls.length; i += batchSize) {
-                batches.push(imageUrls.slice(i, i + batchSize));
-            }
-            
-            for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-                const batch = batches[batchIndex];
-                const promises = batch.map(item => uploadSingleImage(item.url, item.productId, bucketName, region, optimize, convertWebp));
-                
-                await Promise.all(promises);
-                
-                const progress = 10 + ((batchIndex + 1) / batches.length) * 60;
-                updateProgress(progress, `이미지 업로드 중... (${batchIndex + 1}/${batches.length} 배치)`);
-            }
-        }
-        
-        // 동기 이미지 업로드
-        async function uploadImagesSync(imageUrls, bucketName, region, optimize, convertWebp) {
-            for (let i = 0; i < imageUrls.length; i++) {
-                const item = imageUrls[i];
-                await uploadSingleImage(item.url, item.productId, bucketName, region, optimize, convertWebp);
-                
-                const progress = 10 + ((i + 1) / imageUrls.length) * 60;
-                updateProgress(progress, `이미지 업로드 중... (${i + 1}/${imageUrls.length})`);
-            }
-        }
-        
-        // URL 표시명 생성 (로그용)
-        function getUrlDisplayName(url) {
-            if (url.includes('weserv.nl') || url.includes('wsrv.nl')) return 'WeServ (추천)';
-            if (url.includes('corsproxy.io')) return 'CorsProxy.io';
-            if (url.includes('allorigins.win')) return 'AllOrigins';
-            if (url.includes('fringe.zone')) return 'Fringe Zone';
-            if (url.includes('codetabs.com')) return 'CodeTabs';
-            if (url.includes('thingproxy')) return 'ThingProxy';
-            if (url.includes('cors-anywhere')) return 'CORS Anywhere';
-            return '직접 연결';
-        }
-        
-        // Content-Type에서 파일 확장자 추출
-        function getFileExtensionFromContentType(contentType) {
-            const typeMap = {
-                'image/jpeg': '.jpg',
-                'image/jpg': '.jpg', 
-                'image/png': '.png',
-                'image/webp': '.webp',
-                'image/gif': '.gif',
-                'image/bmp': '.bmp',
-                'image/svg+xml': '.svg'
-            };
-            return typeMap[contentType.toLowerCase()] || '.jpg';
-        }
-        
-        // 단일 이미지 업로드
-        async function uploadSingleImage(imageUrl, productId, bucketName, region, optimize, convertWebp) {
-            try {
-                // 네이버 이미지 특별 처리
-                if (imageUrl.includes('pstatic.net')) {
-                    addLog('info', `네이버 이미지 감지: 원본 URL 매핑만 저장`);
-                    // 네이버 이미지는 CORS 제한이 너무 엄격하므로 원본 URL을 그대로 매핑
-                    imageMapping.set(imageUrl, imageUrl);
-                    processedImageCount++;
-                    addLog('success', `네이버 이미지 원본 URL 매핑 완료: ${imageUrl.substring(0, 50)}...`);
-                    return;
-                }
-                
-                // 일반 이미지용 프록시 서버들
-                const proxyUrls = [
-                    // 가장 안정적인 프록시들
-                    `https://images.weserv.nl/?url=${encodeURIComponent(imageUrl)}&output=jpg&q=80`,
-                    `https://corsproxy.io/?${encodeURIComponent(imageUrl)}`,
-                    `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`,
-                    
-                    // 백업 프록시들
-                    `https://cors-proxy.fringe.zone/${imageUrl}`,
-                    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(imageUrl)}`,
-                    `https://thingproxy.freeboard.io/fetch/${imageUrl}`,
-                    
-                    // 마지막 시도들
-                    `https://cors-anywhere.herokuapp.com/${imageUrl}`,
-                    imageUrl // 원본 URL (CORS 허용된 경우)
-                ];
-                
-                let response = null;
-                let lastError = null;
-                let successUrl = null;
-                
-                for (let i = 0; i < proxyUrls.length; i++) {
-                    const tryUrl = proxyUrls[i];
-                    try {
-                        addLog('info', `이미지 다운로드 시도 (${i+1}/${proxyUrls.length}): ${getUrlDisplayName(tryUrl)}`);
-                        
-                        const fetchOptions = {
-                            method: 'GET',
-                            headers: {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                                'Accept': 'image/*,*/*;q=0.8',
-                                'Accept-Language': 'en-US,en;q=0.5',
-                                'Cache-Control': 'no-cache',
-                                'Referer': 'https://blog.naver.com/'
-                            }
-                        };
-                        
-                        // CORS 모드 설정 (프록시에 따라 다름)
-                        if (tryUrl.includes('cors-anywhere') || tryUrl === imageUrl) {
-                            fetchOptions.mode = 'cors';
-                        }
-                        
-                        // 타임아웃 설정
-                        const fetchPromise = fetch(tryUrl, fetchOptions);
-                        const timeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('타임아웃')), 10000) // 10초로 단축
-                        );
-                        
-                        response = await Promise.race([fetchPromise, timeoutPromise]);
-                        
-                        if (response.ok && response.headers.get('content-type')?.startsWith('image/')) {
-                            successUrl = tryUrl;
-                            addLog('success', `이미지 다운로드 성공: ${getUrlDisplayName(tryUrl)}`);
-                            break;
-                        } else {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        }
-                    } catch (error) {
-                        lastError = error;
-                        const errorMsg = error.message;
-                        addLog('warning', `프록시 실패: ${getUrlDisplayName(tryUrl)} - ${errorMsg}`);
-                        
-                        // 빠른 실패를 위해 대기 시간 단축
-                        if (i < proxyUrls.length - 1) {
-                            await new Promise(resolve => setTimeout(resolve, 200));
-                        }
-                        continue;
-                    }
-                }
-                
-                if (!response || !response.ok) {
-                    // 최종 실패 시 원본 URL 매핑으로 폴백
-                    addLog('warning', `이미지 다운로드 실패, 원본 URL 매핑: ${imageUrl.substring(0, 60)}...`);
-                    imageMapping.set(imageUrl, imageUrl);
-                    processedImageCount++;
-                    return;
-                }
-                
-                let imageData = await response.arrayBuffer();
-                let contentType = 'image/jpeg';
-                let fileExtension = '.jpg';
-                
-                // WebP 변환 옵션이 활성화된 경우
-                if (convertWebp) {
-                    const blob = new Blob([imageData]);
-                    const webpBlob = await convertBlobToWebP(blob);
-                    imageData = await webpBlob.arrayBuffer();
-                    contentType = 'image/webp';
-                    fileExtension = '.webp';
-                }
-                
-                // S3 키 생성
-                const urlHash = await generateHash(imageUrl);
-                const s3Key = `products/${productId}/${urlHash}${fileExtension}`;
-                
-                // S3 업로드
-                const uploadParams = {
-                    Bucket: bucketName,
-                    Key: s3Key,
-                    Body: imageData,
-                    ContentType: contentType,
-                    ACL: 'public-read',
-                    CacheControl: 'max-age=31536000',
-                    Metadata: {
-                        'original-url': imageUrl,
-                        'upload-time': Date.now().toString()
-                    }
-                };
-                
-                await s3Client.upload(uploadParams).promise();
-                
-                // 매핑 저장
-                const s3Url = `https://${bucketName}.s3.${region}.amazonaws.com/${s3Key}`;
-                imageMapping.set(imageUrl, s3Url);
-                
-                processedImageCount++;
-                addLog('success', `업로드 완료: ${imageUrl.substring(0, 50)}...`);
-                
-            } catch (error) {
-                addLog('error', `업로드 실패 ${imageUrl}: ${error.message}`);
-            }
-        }
-        
-        // Blob을 WebP로 변환
-        function convertBlobToWebP(blob) {
-            return new Promise((resolve, reject) => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
-                
-                img.onload = function() {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    canvas.toBlob(resolve, 'image/webp', 0.8);
-                };
-                
-                img.onerror = reject;
-                img.src = URL.createObjectURL(blob);
-            });
-        }
-        
-        // Excel 데이터 생성
-        async function generateExcelData(generateNames, useGptEnhancement) {
-            processedData = [];
-            
-            // 모든 이미지 매핑을 S3 URL로 사용 (원본 URL 매핑 제거)
-            const currentImageMapping = imageMapping;
-            
-            for (let index = 0; index < jsonData.length; index++) {
-                const item = jsonData[index];
-                
-                if (!item.content) continue;
-                
-                let productName = generateNames ? generateProductName(item.content) : `상품 ${index + 1}`;
-                let content = item.content;
-                let cleanedContent = removeDecimalNumbers(content); // 소수점 숫자 제거
-                
-                // GPT 개선 옵션이 활성화된 경우
-                if (useGptEnhancement) {
-                    const apiKey = document.getElementById('excelApiKey').value.trim();
-                    if (apiKey) {
-                        try {
-                            const prompt = document.getElementById('promptText').value.trim();
-                            const enhancedContent = await convertText(cleanedContent, prompt, apiKey);
-                            cleanedContent = enhancedContent;
-                            addLog('success', `상품 ${index + 1} GPT 개선 완료`);
-                        } catch (error) {
-                            addLog('warning', `상품 ${index + 1} GPT 개선 실패: ${error.message}`);
-                        }
-                    }
-                }
-                
-                const brand = extractBrand(cleanedContent);
-                const category = extractCategory(cleanedContent);
-                
-                // 시중가격 추출 (JSON 마지막의 소수점 숫자 → 천원 단위로 변환)
-                const marketPrice = extractPriceFromJson(content); // 97.0 → 97,000
-                const salePrice = Math.round(marketPrice * 1.4); // 시중가격의 40% 인상
-                
-                // 기본 설명 (이미지 링크와 소수점 숫자 제거, GPT 텍스트만)
-                const basicDescription = cleanDescription(cleanedContent);
-                
-                // 상품 설명 (GPT 텍스트 + S3 이미지 링크만 사용)
-                const productDescription = createProductDescriptionWithS3Images(cleanedContent, item.images || [], currentImageMapping);
-                
-                // 모바일 상품 설명 (GPT 텍스트 + S3 이미지 링크만 사용)
-                const mobileDescription = createMobileDescriptionWithS3Images(cleanedContent, item.images || [], currentImageMapping);
-                
-                const excelRow = {
-                    상품코드: `PROD_${(index + 1).toString().padStart(4, '0')}`,
-                    상품명: productName,
-                    기본설명: basicDescription,
-                    상품설명: productDescription,
-                    모바일상품설명: mobileDescription,
-                    카테고리: category,
-                    브랜드: brand,
-                    시중가격: marketPrice > 0 ? marketPrice.toLocaleString() : '0',
-                    판매가격: salePrice > 0 ? salePrice.toLocaleString() : '0',
-                    상태: '판매중',
-                    등록일: new Date().toISOString().split('T')[0],
-                    이미지수: (item.images || []).length
-                };
-                
-                processedData.push(excelRow);
-            }
-            
-            addLog('success', `${processedData.length}개 상품 데이터 생성 완료`);
-        }
-        
-        // 설명 정리 (이미지 링크 제거)
-        function cleanDescription(content) {
-            return content
-                .replace(/<[^>]+>/g, ' ')           // HTML 태그 제거
-                .replace(/https?:\/\/[^\s]+/g, '') // 이미지 링크 제거
-                .replace(/\s+/g, ' ')              // 연속 공백 정리
-                .trim();
-        }
-        
-        // 상품 설명 생성 (S3 이미지만 사용)
-        function createProductDescriptionWithS3Images(content, images, mapping) {
-            let description = cleanDescription(content);
-            
-            if (images && images.length > 0) {
-                description += '\n\n[상품 이미지]\n';
-                images.forEach(imageUrl => {
-                    const s3Url = mapping.get(imageUrl);
-                    // S3 URL만 사용 (원본 URL은 제외)
-                    if (s3Url && s3Url !== imageUrl && s3Url.includes('s3.')) {
-                        description += `${s3Url}\n`;
-                    }
-                });
-            }
-            
-            return description;
-        }
-        
-        // 모바일 상품 설명 생성 (S3 이미지만 사용)
-        function createMobileDescriptionWithS3Images(content, images, mapping) {
-            let mobileDesc = cleanDescription(content);
-            
-            if (images && images.length > 0) {
-                mobileDesc += '<br><br>[상품 이미지]<br>';
-                images.slice(0, 5).forEach(imageUrl => {
-                    const s3Url = mapping.get(imageUrl);
-                    // S3 URL만 사용 (원본 URL은 제외)
-                    if (s3Url && s3Url !== imageUrl && s3Url.includes('s3.')) {
-                        mobileDesc += `<img src="${s3Url}" style="max-width:100%;"><br>`;
-                    }
-                });
-            }
-            
-            return mobileDesc;
-        }
-        
-        // 파일명으로 S3 URL 찾기
-        function findS3UrlByFileName(originalUrl, mapping) {
-            // 원본 URL에서 파일명 추출
-            const fileName = originalUrl.split('/').pop().split('?')[0];
-            
-            // 매핑에서 파일명이 포함된 S3 URL 찾기
-            for (const [key, value] of mapping.entries()) {
-                if (key.includes(fileName) || value.includes(fileName)) {
-                    return value;
-                }
-            }
-            
-            return null;
-        }
-        
+
         // GPT API를 사용한 텍스트 변환
         async function convertText(text, prompt, apiKey) {
             const model = document.getElementById('gptModel').value;
@@ -1564,8 +1335,16 @@
             const data = await response.json();
             return data.choices[0].message.content;
         }
-        
-        // 상품명 생성
+
+        // 유틸리티 함수들
+        function cleanDescription(content) {
+            return content
+                .replace(/<[^>]+>/g, ' ')
+                .replace(/https?:\/\/[^\s]+/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
         function generateProductName(content) {
             const lines = content.split('<br>');
             if (lines.length > 0) {
@@ -1574,8 +1353,7 @@
             }
             return '상품명 미정';
         }
-        
-        // 브랜드 추출
+
         function extractBrand(content) {
             const brands = ['롤렉스', '오메가', '파텍필립', '크롬하츠', '루이비통', '샤넬', '구찌', '에르메스', '오데마피게', '리차드밀'];
             for (const brand of brands) {
@@ -1585,121 +1363,55 @@
             }
             return '기타';
         }
-        
-        // 카테고리 추출
-        function extractCategory(content) {
-            if (content.includes('시계') || content.includes('워치')) return '시계';
-            if (content.includes('가방') || content.includes('백')) return '가방';
-            if (content.includes('반지') || content.includes('목걸이') || content.includes('팔찌')) return '액세서리';
-            if (content.includes('의류') || content.includes('셔츠') || content.includes('니트')) return '의류';
-            return '기타';
-        }
-        
-        // 가격 추출 (JSON 텍스트 마지막의 소수점 숫자들)
+
         function extractPriceFromJson(content) {
-            // 텍스트 마지막 부분에서 소수점 숫자 찾기 (97.0, 90.0, 85.0, 140.0 등)
             const pricePattern = /(\d+\.\d+)(?:\s*,?\s*(\d+\.\d+))*$/;
             const match = content.match(pricePattern);
             
             if (match) {
-                // 모든 소수점 숫자들을 찾기
                 const allPrices = content.match(/\d+\.\d+/g);
                 if (allPrices && allPrices.length > 0) {
-                    // 마지막 몇 개의 숫자들 중에서 가장 큰 값을 시중가격으로 사용
-                    const lastPrices = allPrices.slice(-4); // 마지막 4개
+                    const lastPrices = allPrices.slice(-4);
                     const maxPrice = Math.max(...lastPrices.map(p => parseFloat(p)));
-                    // 97.0 → 97,000으로 변환 (1000배 후 천단위 콤마)
-                    return Math.round(maxPrice * 1000);
+                    return Math.round(maxPrice * 10000); // 97.0 → 970000
                 }
             }
             
             return 0;
         }
-        
-        // 소수점 숫자 제거 함수
+
         function removeDecimalNumbers(text) {
-            // 마지막 부분의 소수점 숫자들 제거 (97.0, 90.0, 85.0, 140.0 등)
             return text.replace(/[\s,]*\d+\.\d+(?:\s*,?\s*\d+\.\d+)*\s*$/g, '').trim();
         }
-        
-        // S3에서 기존 이미지 매핑 생성 (파일명 기반)
-        async function createImageMappingFromS3() {
-            const bucketName = document.getElementById('bucketName').value;
-            const region = document.getElementById('region').value;
-            
-            try {
-                const params = {
-                    Bucket: bucketName,
-                    Prefix: 'products/'
-                };
-                
-                const data = await s3Client.listObjectsV2(params).promise();
-                const s3ImageMapping = new Map();
-                
-                if (data.Contents) {
-                    for (const obj of data.Contents) {
-                        // S3 키에서 파일명 추출
-                        const fileName = obj.Key.split('/').pop();
-                        const s3Url = `https://${bucketName}.s3.${region}.amazonaws.com/${obj.Key}`;
-                        
-                        // 원본 URL을 메타데이터에서 찾기
-                        try {
-                            const headParams = {
-                                Bucket: bucketName,
-                                Key: obj.Key
-                            };
-                            const metadata = await s3Client.headObject(headParams).promise();
-                            const originalUrl = metadata.Metadata['original-url'];
-                            
-                            if (originalUrl) {
-                                s3ImageMapping.set(originalUrl, s3Url);
-                            }
-                        } catch (e) {
-                            // 메타데이터가 없는 경우 파일명으로 매핑
-                            s3ImageMapping.set(fileName, s3Url);
-                        }
-                    }
-                }
-                
-                addLog('success', `S3에서 ${s3ImageMapping.size}개 이미지 매핑 생성`);
-                return s3ImageMapping;
-                
-            } catch (error) {
-                addLog('error', `S3 이미지 매핑 생성 실패: ${error.message}`);
-                return new Map();
-            }
-        }
-        
-        // Excel 모드 미리보기 표시
+
+        // 미리보기 및 다운로드 함수들
         function showExcelPreview() {
             const previewSection = document.getElementById('previewSection');
             const previewContent = document.getElementById('previewContent');
             
-            // 통계 정보
             const totalProducts = processedData.length;
-            const totalMappedImages = imageMapping.size;
-            const successRate = totalImages > 0 ? ((processedImageCount / totalImages) * 100).toFixed(1) : 0;
+            const s3SuccessCount = Array.from(imageMapping.values()).filter(url => url && url.includes('s3.amazonaws.com')).length;
+            const successRate = totalImages > 0 ? ((s3SuccessCount / totalImages) * 100).toFixed(1) : 0;
             
             const statsDiv = document.createElement('div');
             statsDiv.innerHTML = `
                 <div class="status-badge status-success">상품: ${totalProducts}개</div>
-                <div class="status-badge status-success">이미지 매핑: ${totalMappedImages}개</div>
-                <div class="status-badge status-warning">업로드 성공률: ${successRate}%</div>
+                <div class="status-badge status-success">S3 업로드: ${s3SuccessCount}개</div>
+                <div class="status-badge ${successRate >= 80 ? 'status-success' : successRate >= 50 ? 'status-warning' : 'status-error'}">S3 성공률: ${successRate}%</div>
             `;
             
-            // 테이블 생성
             const table = document.createElement('table');
             table.className = 'preview-table';
             table.innerHTML = `
                 <thead>
                     <tr>
-                        <th>상품코드</th>
                         <th>상품명</th>
-                        <th>브랜드</th>
-                        <th>카테고리</th>
+                        <th>기본분류</th>
                         <th>시중가격</th>
                         <th>판매가격</th>
-                        <th>이미지 수</th>
+                        <th>이미지1</th>
+                        <th>이미지2</th>
+                        <th>이미지3</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -1710,14 +1422,19 @@
             
             previewItems.forEach(item => {
                 const row = document.createElement('tr');
+                
+                const img1Display = item.이미지1 ? 'S3 ✅' : '없음 ❌';
+                const img2Display = item.이미지2 ? 'S3 ✅' : '없음 ❌';
+                const img3Display = item.이미지3 ? 'S3 ✅' : '없음 ❌';
+                
                 row.innerHTML = `
-                    <td>${item.상품코드}</td>
-                    <td>${item.상품명}</td>
-                    <td>${item.브랜드}</td>
-                    <td>${item.카테고리}</td>
-                    <td>${item.시중가격}</td>
-                    <td>${item.판매가격}</td>
-                    <td>${item.이미지수}</td>
+                    <td style="max-width: 200px; word-wrap: break-word;">${item.상품명}</td>
+                    <td>${item.기본분류}</td>
+                    <td>${item.시중가격.toLocaleString()}</td>
+                    <td>${item.판매가격.toLocaleString()}</td>
+                    <td>${img1Display}</td>
+                    <td>${img2Display}</td>
+                    <td>${img3Display}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -1725,297 +1442,17 @@
             previewContent.innerHTML = '';
             previewContent.appendChild(statsDiv);
             previewContent.appendChild(table);
-            
             previewSection.style.display = 'block';
         }
-        
-        // 텍스트 모드 미리보기 표시
+
         function showTextPreview() {
             const previewSection = document.getElementById('previewSection');
             const previewContent = document.getElementById('previewContent');
             
             previewContent.innerHTML = '';
             
-            // 최대 3개만 미리보기로 표시
             const previewItems = convertedResults.slice(0, 3);
             
             previewItems.forEach(result => {
                 const previewItem = document.createElement('div');
                 previewItem.className = 'preview-item';
-                previewItem.innerHTML = `
-                    <h4>상품 ${result.index}</h4>
-                    <div class="preview-content">${result.converted}</div>
-                `;
-                previewContent.appendChild(previewItem);
-            });
-            
-            if (convertedResults.length > 3) {
-                const moreItem = document.createElement('div');
-                moreItem.className = 'preview-item';
-                moreItem.innerHTML = `<h4>... 외 ${convertedResults.length - 3}개 더</h4>`;
-                previewContent.appendChild(moreItem);
-            }
-            
-            previewSection.style.display = 'block';
-        }
-        
-        // Excel 모드 다운로드 섹션 표시
-        function showExcelDownload() {
-            const downloadSection = document.getElementById('downloadSection');
-            const downloadDescription = document.getElementById('downloadDescription');
-            const downloadButtons = document.getElementById('downloadButtons');
-            
-            downloadDescription.textContent = 'Excel 파일과 이미지 매핑 파일을 다운로드하세요';
-            
-            downloadButtons.innerHTML = `
-                <button class="download-btn" onclick="downloadExcel()">📊 Excel 파일 다운로드</button>
-                <button class="download-btn" onclick="downloadMapping()">🔗 이미지 매핑 다운로드</button>
-            `;
-            
-            downloadSection.style.display = 'block';
-        }
-        
-        // 텍스트 모드 다운로드 섹션 표시
-        function showTextDownload() {
-            const downloadSection = document.getElementById('downloadSection');
-            const downloadDescription = document.getElementById('downloadDescription');
-            const downloadButtons = document.getElementById('downloadButtons');
-            
-            downloadDescription.textContent = '변환된 결과를 다운로드하거나 복사하세요';
-            
-            downloadButtons.innerHTML = `
-                <button class="download-btn" onclick="downloadTextResult()">📄 텍스트 파일 다운로드</button>
-                <button class="download-btn" onclick="downloadTextImages()">🖼️ 이미지 다운로드</button>
-                <button class="download-btn" onclick="copyToClipboard()">📋 클립보드에 복사</button>
-            `;
-            
-            downloadSection.style.display = 'block';
-        }
-        
-        // 모달 열기
-        function openModal() {
-            const modal = document.getElementById('resultModal');
-            const modalContent = document.getElementById('modalContent');
-            
-            modalContent.innerHTML = '';
-            
-            if (currentMode === 'excel') {
-                // Excel 모드 모달
-                processedData.forEach(item => {
-                    const resultItem = document.createElement('div');
-                    resultItem.className = 'preview-item';
-                    resultItem.innerHTML = `
-                        <h4>${item.상품코드} - ${item.상품명}</h4>
-                        <div class="preview-content">
-                            <strong>브랜드:</strong> ${item.브랜드}<br>
-                            <strong>카테고리:</strong> ${item.카테고리}<br>
-                            <strong>시중가격:</strong> ${item.시중가격}<br>
-                            <strong>판매가격:</strong> ${item.판매가격}<br>
-                            <strong>기본설명:</strong><br>${item.기본설명}<br><br>
-                            <strong>상품설명:</strong><br>${item.상품설명}
-                        </div>
-                    `;
-                    modalContent.appendChild(resultItem);
-                });
-            } else {
-                // 텍스트 모드 모달
-                convertedResults.forEach(result => {
-                    const resultItem = document.createElement('div');
-                    resultItem.className = 'preview-item';
-                    resultItem.innerHTML = `
-                        <h4>상품 ${result.index}</h4>
-                        <div class="preview-content">${result.converted}</div>
-                    `;
-                    modalContent.appendChild(resultItem);
-                });
-                
-                // 이미지가 있다면 표시
-                if (processedImages.length > 0) {
-                    const imageSection = document.createElement('div');
-                    imageSection.className = 'preview-item';
-                    imageSection.innerHTML = '<h4>변환된 이미지</h4>';
-                    
-                    const imageContainer = document.createElement('div');
-                    imageContainer.className = 'preview-images';
-                    
-                    processedImages.forEach((item, index) => {
-                        const img = document.createElement('img');
-                        img.className = 'preview-image';
-                        img.src = URL.createObjectURL(item.blob);
-                        img.title = `이미지 ${index + 1}`;
-                        imageContainer.appendChild(img);
-                    });
-                    
-                    imageSection.appendChild(imageContainer);
-                    modalContent.appendChild(imageSection);
-                }
-            }
-            
-            modal.style.display = 'block';
-        }
-        
-        // 모달 닫기
-        function closeModal() {
-            document.getElementById('resultModal').style.display = 'none';
-        }
-        
-        // Excel 파일 다운로드
-        function downloadExcel() {
-            if (processedData.length === 0) {
-                alert('변환된 데이터가 없습니다');
-                return;
-            }
-            
-            try {
-                const ws = XLSX.utils.json_to_sheet(processedData);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, '상품 데이터');
-                
-                const fileName = `products_${new Date().toISOString().split('T')[0]}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-                
-                addLog('success', `Excel 파일 다운로드: ${fileName}`);
-            } catch (error) {
-                addLog('error', `Excel 다운로드 실패: ${error.message}`);
-                console.error('Excel download error:', error);
-            }
-        }
-        
-        // 이미지 매핑 파일 다운로드
-        function downloadMapping() {
-            try {
-                const mappingData = {
-                    timestamp: new Date().toISOString(),
-                    total_mappings: imageMapping.size,
-                    bucket_name: document.getElementById('bucketName').value,
-                    url_mapping: Object.fromEntries(imageMapping),
-                    statistics: {
-                        total_images: totalImages,
-                        processed_images: processedImageCount,
-                        success_rate: totalImages > 0 ? ((processedImageCount / totalImages) * 100).toFixed(2) : 0
-                    }
-                };
-                
-                const blob = new Blob([JSON.stringify(mappingData, null, 2)], {
-                    type: 'application/json'
-                });
-                
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `image_mapping_${new Date().toISOString().split('T')[0]}.json`;
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                
-                addLog('success', '이미지 매핑 파일 다운로드 완료');
-            } catch (error) {
-                addLog('error', `매핑 다운로드 실패: ${error.message}`);
-                console.error('Mapping download error:', error);
-            }
-        }
-        
-        // 텍스트 결과 다운로드
-        function downloadTextResult() {
-            if (convertedResults.length === 0) {
-                alert('변환된 결과가 없습니다');
-                return;
-            }
-            
-            let content = '';
-            convertedResults.forEach(result => {
-                content += `=== 상품 ${result.index} ===\n\n`;
-                content += result.converted;
-                content += '\n\n' + '='.repeat(50) + '\n\n';
-            });
-            
-            const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `converted_products_${new Date().toISOString().split('T')[0]}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            addLog('success', '텍스트 파일 다운로드 완료');
-        }
-        
-        // 텍스트 모드 이미지 다운로드
-        function downloadTextImages() {
-            if (processedImages.length === 0) {
-                alert('변환된 이미지가 없습니다');
-                return;
-            }
-            
-            processedImages.forEach((item, index) => {
-                const url = URL.createObjectURL(item.blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = item.name;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-            
-            addLog('success', `${processedImages.length}개 이미지 다운로드 완료`);
-        }
-        
-        // 클립보드에 복사
-        async function copyToClipboard() {
-            if (convertedResults.length === 0) {
-                alert('변환된 결과가 없습니다');
-                return;
-            }
-            
-            let content = '';
-            convertedResults.forEach(result => {
-                content += result.converted + '\n\n';
-            });
-            
-            try {
-                await navigator.clipboard.writeText(content);
-                addLog('success', '클립보드에 복사되었습니다');
-            } catch (err) {
-                addLog('error', '클립보드 복사 실패');
-            }
-        }
-        
-        // 유틸리티 함수들
-        function updateProgress(percentage, task) {
-            document.getElementById('progressFill').style.width = `${percentage}%`;
-            document.getElementById('progressText').textContent = `${Math.round(percentage)}%`;
-            document.getElementById('currentTask').textContent = task;
-        }
-        
-        function addLog(type, message) {
-            const logContent = document.getElementById('logContent');
-            const logEntry = document.createElement('div');
-            logEntry.className = `log-entry log-${type}`;
-            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logContent.appendChild(logEntry);
-            logContent.scrollTop = logContent.scrollHeight;
-        }
-        
-        async function generateHash(text) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(text);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 12);
-        }
-        
-        // 모달 외부 클릭 시 닫기
-        window.addEventListener('click', function(event) {
-            const modal = document.getElementById('resultModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        });
-    </script>
-</body>
-</html>
